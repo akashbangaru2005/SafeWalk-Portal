@@ -1,0 +1,2133 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+:root {
+  font-family: "DM Sans", system-ui, sans-serif;
+  color: #eef2ff;
+  background: #080b15;
+  font-synthesis: none;
+  --bg: #080b15;
+  --panel: rgba(255,255,255,.075);
+  --line: rgba(255,255,255,.13);
+  --muted: #9ba4bc;
+  --accent: #7cf3cf;
+  --accent2: #8ca4ff;
+  --danger: #ff6f91;
+  --success: #6ee7a7;
+  --shadow: 0 24px 70px rgba(0,0,0,.30);
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; background:
+  radial-gradient(circle at 10% 0%, rgba(124,243,207,.12), transparent 30%),
+  radial-gradient(circle at 90% 15%, rgba(140,164,255,.12), transparent 30%),
+  var(--bg); }
+button, input, textarea { font: inherit; }
+button { cursor: pointer; }
+button:disabled { opacity: .55; cursor: not-allowed; }
+h1,h2,p { margin-top: 0; }
+h1,h2,strong { font-family: "Space Grotesk", sans-serif; }
+.muted { color: var(--muted); line-height: 1.6; }
+.eyebrow, .section-kicker { color: var(--accent); letter-spacing: .16em; font-weight: 700; font-size: .68rem; }
+.glass { background: var(--panel); border: 1px solid var(--line); box-shadow: var(--shadow); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); }
+.clay { background: linear-gradient(145deg,#e9eef6,#c9d1dc); color:#172033; box-shadow: 12px 12px 28px rgba(0,0,0,.23), -8px -8px 22px rgba(255,255,255,.07), inset 2px 2px 7px rgba(255,255,255,.55), inset -3px -3px 8px rgba(0,0,0,.10); border: 1px solid rgba(255,255,255,.45); }
+.brand { display:flex; align-items:center; gap:10px; }
+.brand-mark { width:38px; height:38px; border-radius:13px; display:grid; place-items:center; color:#07120f; background:linear-gradient(135deg,var(--accent),#d2fff0); box-shadow:0 8px 24px rgba(124,243,207,.16); }
+.brand strong { display:block; font-size:1rem; }
+.brand span { display:block; color:var(--muted); font-size:.68rem; margin-top:2px; }
+.admin-topbar .brand span { color:#4d5a70; }
+
+.login-shell { min-height:100svh; display:grid; place-items:center; padding:20px; overflow:hidden; position:relative; }
+.login-card { width:min(100%,430px); border-radius:30px; padding:30px; position:relative; z-index:2; animation:floatIn .7s ease both; }
+.login-card .brand { margin-bottom:30px; }
+.login-icon { width:68px;height:68px;border-radius:22px;display:grid;place-items:center;background:rgba(124,243,207,.10);border:1px solid rgba(124,243,207,.25); color:var(--accent); margin-bottom:20px; }
+.login-card h1 { font-size:2rem; margin:7px 0 10px; }
+.segmented { display:grid;grid-template-columns:1fr 1fr;padding:4px;border-radius:15px;background:rgba(255,255,255,.055);margin:24px 0 15px; }
+.segmented button { border:0;background:transparent;color:var(--muted);padding:11px;border-radius:11px; }
+.segmented button.active { background:rgba(255,255,255,.12);color:white;box-shadow:0 5px 20px rgba(0,0,0,.14); }
+.pin-input { width:100%;border:1px solid var(--line);background:rgba(0,0,0,.16);color:white;border-radius:17px;padding:17px;text-align:center;letter-spacing:.48em;font-size:1.3rem;outline:none; }
+.pin-input:focus { border-color:rgba(124,243,207,.55); box-shadow:0 0 0 4px rgba(124,243,207,.08); }
+.primary-btn,.secondary-btn { border:0;border-radius:16px;padding:14px 17px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700; }
+.primary-btn { width:100%; margin-top:15px;background:linear-gradient(135deg,var(--accent),#b9ffea);color:#06100d;box-shadow:0 12px 28px rgba(124,243,207,.16); }
+.secondary-btn { background:rgba(255,255,255,.12);color:white;border:1px solid var(--line); }
+.login-note { display:flex;gap:7px;align-items:center;color:#7e879e;font-size:.72rem;margin-top:17px;justify-content:center; }
+.login-note svg { color:var(--success); }
+.error-box,.success-box { margin-top:12px;padding:11px 12px;border-radius:13px;display:flex;gap:8px;align-items:flex-start;font-size:.78rem;line-height:1.45; }
+.error-box { color:#ffc0cd;background:rgba(255,111,145,.09);border:1px solid rgba(255,111,145,.20); }
+.success-box { color:#baffd7;background:rgba(110,231,167,.09);border:1px solid rgba(110,231,167,.20); }
+.login-orbit { position:absolute;border-radius:50%;filter:blur(2px);animation:drift 8s ease-in-out infinite alternate; }
+.orbit-a { width:300px;height:300px;background:rgba(124,243,207,.08);top:-100px;left:-100px; }
+.orbit-b { width:250px;height:250px;background:rgba(140,164,255,.08);bottom:-80px;right:-80px;animation-delay:1s; }
+
+.user-page { min-height:100svh; padding-bottom:35px; }
+.topbar { position:sticky;top:10px;z-index:10; margin:10px auto 0; width:min(94%,760px); border-radius:20px;padding:10px 12px 10px 14px;display:flex;justify-content:space-between;align-items:center; }
+.icon-btn,.round-btn { border:1px solid var(--line);background:rgba(255,255,255,.07);color:white;width:40px;height:40px;border-radius:13px;display:grid;place-items:center; }
+.user-main { width:min(94%,760px); margin:30px auto; display:grid;gap:18px; }
+.hero-copy { padding:8px 4px 5px; }
+.hero-copy h1 { font-size:clamp(2.7rem,11vw,4.5rem);line-height:.9;letter-spacing:-.055em;margin:8px 0 17px; }
+.hero-copy h1 span { color:var(--accent); }
+.hero-copy p { max-width:580px; }
+
+.map-card,.report-card { border-radius:26px;padding:18px; }
+.section-heading { display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:15px; }
+.section-heading h2 { margin:3px 0 0;font-size:1.12rem; }
+.map { width:100%;height:290px;border-radius:19px;overflow:hidden; }
+.map-fallback,.map-placeholder { min-height:290px;border-radius:19px;background:linear-gradient(135deg,rgba(124,243,207,.06),rgba(140,164,255,.06));border:1px dashed var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;color:var(--muted);padding:20px; }
+.map-placeholder svg { color:var(--accent); }
+.map-placeholder strong { color:white; }
+.map-placeholder small { color:#7c879f; }
+.coordinate-row,.location-confirm { display:flex;align-items:center;gap:9px;margin-top:10px;padding:10px 12px;border-radius:13px;background:rgba(0,0,0,.13);font-size:.75rem;color:#c6ccdc; }
+.coordinate-row svg,.location-confirm svg { color:var(--accent);flex:none; }
+.coordinate-row small { margin-left:auto;color:#7f8aa2; }
+.location-confirm { margin-top:14px; }
+.location-confirm div { flex:1;display:grid;gap:2px; }
+.location-confirm strong { font-size:.78rem; }
+.location-confirm span { font-size:.7rem;color:#8d97ad; }
+.location-confirm > svg:last-child { color:var(--success); }
+
+.field-label { display:block;font-size:.75rem;font-weight:700;color:#aab3c8;margin:16px 0 9px; }
+.issue-grid { display:grid;grid-template-columns:1fr 1fr;gap:8px; }
+.issue-chip { min-height:48px;border:1px solid var(--line);background:rgba(255,255,255,.045);color:#bfc7d8;border-radius:13px;text-align:left;padding:8px 11px;font-size:.75rem; }
+.issue-chip.active { border-color:rgba(124,243,207,.45);background:rgba(124,243,207,.10);color:white;box-shadow:0 7px 22px rgba(124,243,207,.06); }
+.photo-area { min-height:180px;border:1px dashed rgba(255,255,255,.16);border-radius:18px;padding:10px;background:rgba(0,0,0,.09); }
+.photo-actions { min-height:158px;display:grid;grid-template-columns:1fr 1fr;gap:9px; }
+.camera-btn,.upload-btn { border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.045);display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;color:#cbd2e1; }
+.camera-btn svg { color:var(--accent); }
+.upload-btn svg { color:#aab8ff; }
+.camera-btn span,.upload-btn span { color:#7e899f;font-size:.67rem; }
+.photo-actions input { display:none; }
+.preview-wrap { position:relative; }
+.preview-wrap img { width:100%;height:220px;object-fit:cover;border-radius:13px;display:block; }
+.remove-photo { position:absolute;right:9px;top:9px;width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.55);color:white;display:grid;place-items:center; }
+textarea { width:100%;resize:vertical;min-height:90px;background:rgba(0,0,0,.12);border:1px solid var(--line);color:white;border-radius:15px;padding:13px;outline:none; }
+textarea:focus { border-color:rgba(124,243,207,.45); }
+.report-submit { margin-top:13px; }
+.recent-section { margin-top:4px; }
+.section-heading.plain { padding:0 4px; }
+.activity-card { border-radius:17px;padding:12px;display:flex;align-items:center;gap:10px;margin-top:8px; }
+.activity-card > div:nth-child(2) { flex:1;display:grid;gap:3px; }
+.activity-card strong { font-size:.8rem; }
+.activity-card span { font-size:.67rem;color:#7e899f; }
+.status-dot { width:9px;height:9px;border-radius:50%;background:#8c96aa; }
+.status-dot.open { background:#ffb36b;box-shadow:0 0 12px #ffb36b; }
+.status-dot.in_progress { background:#9ea9ff;box-shadow:0 0 12px #9ea9ff; }
+.status-dot.resolved { background:#6ee7a7;box-shadow:0 0 12px #6ee7a7; }
+.status { font-size:.58rem;padding:5px 7px;border-radius:8px;white-space:nowrap;background:rgba(255,255,255,.07);color:#bfc7d8; }
+.status.resolved { color:#9ef5bf;background:rgba(110,231,167,.09); }
+.status.in_progress { color:#b8c1ff;background:rgba(140,164,255,.10); }
+.status.open { color:#ffc68f;background:rgba(255,179,107,.09); }
+.status.rejected { color:#ffb0c0;background:rgba(255,111,145,.08); }
+.empty-card { padding:22px;text-align:center;color:#778198;border:1px dashed var(--line);border-radius:16px;font-size:.8rem; }
+
+.admin-page { min-height:100svh;background:#dce3eb;color:#172033;padding-bottom:50px; }
+.admin-topbar { position:sticky;top:10px;z-index:20;margin:10px auto 0;width:min(94%,1100px);border-radius:20px;padding:10px 12px 10px 14px;display:flex;align-items:center;justify-content:space-between; }
+.admin-topbar .icon-btn { color:#172033;border-color:rgba(23,32,51,.13);background:rgba(255,255,255,.30); }
+.admin-menu { position:absolute;right:10px;top:58px;padding:7px;border-radius:14px;background:#edf2f8;box-shadow:8px 8px 20px rgba(0,0,0,.18); }
+.admin-menu button { border:0;background:transparent;display:flex;gap:8px;align-items:center;padding:10px 12px;color:#172033; }
+.admin-main { width:min(94%,1100px);margin:28px auto;display:grid;gap:18px; }
+.admin-welcome h1 { font-size:clamp(2rem,7vw,3.5rem);margin:8px 0 5px;letter-spacing:-.04em; }
+.admin-welcome h1 span { color:#6374cf; }
+.admin-welcome p { color:#647087;max-width:650px; }
+.admin-page .eyebrow,.admin-page .section-kicker { color:#6877c7; }
+.stats-grid { display:grid;grid-template-columns:repeat(2,1fr);gap:12px; }
+.stat-card { border-radius:20px;padding:17px;display:grid;grid-template-columns:auto 1fr;column-gap:12px;align-items:center; }
+.stat-card .stat-icon { grid-row:span 2;width:40px;height:40px;border-radius:13px;background:rgba(255,255,255,.55);display:grid;place-items:center;color:#6271c7; }
+.stat-card svg { width:19px; }
+.stat-card strong { font-size:1.55rem;line-height:1; }
+.stat-card span { color:#69768c;font-size:.68rem; }
+.admin-map-card,.reports-panel { border-radius:24px;padding:18px; }
+.admin-map-card .map,.reports-panel .map { height:300px; }
+.admin-page .map-placeholder { color:#68758c;border-color:rgba(23,32,51,.12);background:rgba(255,255,255,.18); }
+.admin-page .map-placeholder strong { color:#263148; }
+.refresh-btn { border:0;border-radius:11px;padding:8px 10px;background:rgba(255,255,255,.5);color:#33405b;font-weight:700;font-size:.7rem; }
+.filter-row { display:flex;gap:6px;overflow:auto;padding-bottom:7px;scrollbar-width:none; }
+.filter { flex:none;border:0;background:rgba(255,255,255,.25);color:#657188;padding:8px 10px;border-radius:10px;font-size:.62rem;font-weight:700; }
+.filter.active { background:#303b56;color:white;box-shadow:4px 4px 9px rgba(0,0,0,.15); }
+.report-list { display:grid;gap:8px;margin-top:8px; }
+.report-row { border:0;border-radius:17px;background:rgba(255,255,255,.30);padding:9px;display:grid;grid-template-columns:58px 1fr auto;gap:10px;text-align:left;align-items:center;color:#172033; }
+.report-thumb { width:58px;height:58px;border-radius:13px;overflow:hidden;background:#cbd3df;display:grid;place-items:center;color:#738097; }
+.report-thumb img { width:100%;height:100%;object-fit:cover; }
+.report-row-content { min-width:0;display:grid;gap:3px; }
+.report-row-content strong { font-size:.78rem; }
+.report-row-content span,.report-row-content small { overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#6b778d;font-size:.65rem; }
+.report-row .status { align-self:start;margin-top:2px; }
+.drawer-backdrop { position:fixed;inset:0;background:rgba(13,19,30,.52);z-index:50;display:flex;justify-content:flex-end;backdrop-filter:blur(6px); }
+.report-drawer { width:min(100%,520px);height:100%;overflow:auto;border-radius:28px 0 0 28px;padding:20px;animation:slideIn .35s ease both; }
+.drawer-header { display:flex;justify-content:space-between;align-items:center;margin-bottom:15px; }
+.drawer-header h2 { margin:3px 0 0; }
+.drawer-header .icon-btn { color:#172033;border-color:rgba(23,32,51,.13);background:rgba(255,255,255,.3); }
+.drawer-photo { width:100%;max-height:310px;object-fit:cover;border-radius:18px;margin-bottom:10px; }
+.detail-card { background:rgba(255,255,255,.28);border-radius:16px;padding:14px;margin-bottom:10px; }
+.detail-card strong { font-size:.9rem; }
+.detail-card p { color:#68758b;font-size:.76rem;line-height:1.5;margin:6px 0 0; }
+.coordinates { display:flex;align-items:center;gap:7px;padding:10px;color:#59667d;font-size:.72rem; }
+.status-actions { display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px; }
+.status-action { border:0;border-radius:13px;padding:12px 8px;background:rgba(255,255,255,.33);color:#4d5a70;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px; }
+.status-action svg { width:16px; }
+.status-action.selected { background:#303b56;color:white;box-shadow:4px 4px 10px rgba(0,0,0,.15); }
+
+@keyframes floatIn { from { opacity:0;transform:translateY(25px) scale(.98) } to { opacity:1;transform:none } }
+@keyframes drift { to { transform:translate(30px,20px) scale(1.08); } }
+@keyframes slideIn { from { transform:translateX(30px);opacity:.4 } to { transform:none;opacity:1 } }
+
+@media (min-width:760px) {
+  .user-main { grid-template-columns:1.05fr .95fr; align-items:start; }
+  .hero-copy { grid-column:1/-1; }
+  .map-card { grid-column:1; }
+  .report-card { grid-column:2;grid-row:2/span 2; }
+  .recent-section { grid-column:1; }
+  .stats-grid { grid-template-columns:repeat(4,1fr); }
+  .issue-grid { grid-template-columns:1fr; }
+}
+
+@media (max-width:520px) {
+  .login-card { padding:23px;border-radius:25px; }
+  .hero-copy h1 { font-size:3rem; }
+  .report-row { grid-template-columns:52px 1fr; }
+  .report-thumb { width:52px;height:52px; }
+  .report-row .status { grid-column:2;justify-self:start; }
+}
+/* =========================================================
+   SAFEWALK REPORT DETAILS MODAL
+   Leaflet maps use high internal z-index values, so the
+   report modal must sit above every Leaflet layer.
+   ========================================================= */
+
+.report-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 5000 !important;
+
+  display: flex;
+  justify-content: flex-end;
+  align-items: stretch;
+
+  background: rgba(20, 30, 45, 0.58);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+
+  isolation: isolate;
+}
+
+.report-modal-overlay .leaflet-container,
+.report-modal-overlay .leaflet-pane,
+.report-modal-overlay .leaflet-control-container {
+  z-index: auto !important;
+}
+
+.report-drawer {
+  position: relative;
+  z-index: 5100 !important;
+
+  width: min(560px, 100%);
+  height: 100vh;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(246, 249, 255, 0.97),
+      rgba(225, 232, 244, 0.97)
+    );
+
+  border-left: 1px solid rgba(255, 255, 255, 0.75);
+
+  box-shadow:
+    -20px 0 70px rgba(20, 30, 50, 0.25);
+
+  isolation: isolate;
+
+  scrollbar-width: thin;
+}
+
+/* Keep every element inside the drawer above Leaflet */
+.report-drawer > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Drawer header */
+.report-drawer-header {
+  position: sticky;
+  top: 0;
+
+  z-index: 5200 !important;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 24px;
+
+  background:
+    rgba(238, 243, 251, 0.92);
+
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+
+  border-bottom:
+    1px solid rgba(255, 255, 255, 0.65);
+}
+
+/* Report content */
+.report-drawer-content {
+  padding: 20px;
+}
+
+/* Report image */
+.report-image-container {
+  width: 100%;
+
+  border-radius: 22px;
+  overflow: hidden;
+
+  background: #e7ebf2;
+
+  box-shadow:
+    0 12px 30px rgba(20, 30, 50, 0.12);
+}
+
+.report-image-container img {
+  display: block;
+
+  width: 100%;
+  height: 240px;
+
+  object-fit: cover;
+}
+
+/* Report information card */
+.report-info-card {
+  margin-top: 16px;
+
+  padding: 20px;
+
+  border-radius: 22px;
+
+  background:
+    rgba(255, 255, 255, 0.62);
+
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 10px 30px rgba(20, 30, 50, 0.08);
+}
+
+/* Report location section */
+.report-location-section {
+  margin-top: 18px;
+}
+
+.report-location-title {
+  margin-bottom: 10px;
+
+  font-size: 13px;
+  font-weight: 800;
+
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+
+  color: #53627a;
+}
+
+/*
+   IMPORTANT:
+   This makes the report map stay inside the drawer.
+*/
+.report-location-map {
+  position: relative;
+
+  width: 100%;
+  height: 230px;
+
+  overflow: hidden;
+
+  border-radius: 20px;
+
+  isolation: isolate;
+
+  box-shadow:
+    0 12px 30px rgba(20, 30, 50, 0.13);
+}
+
+/* Leaflet must stay inside its map container */
+.report-location-map .leaflet-container {
+  position: absolute !important;
+
+  inset: 0;
+
+  width: 100% !important;
+  height: 100% !important;
+
+  z-index: 1 !important;
+}
+
+/* Leaflet controls stay inside the report map */
+.report-location-map .leaflet-control-container {
+  z-index: 10 !important;
+}
+
+/* Coordinates */
+.report-coordinates {
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  gap: 10px;
+
+  margin-top: 12px;
+}
+
+.report-coordinate-item {
+  padding: 12px 14px;
+
+  border-radius: 14px;
+
+  background: rgba(255, 255, 255, 0.65);
+
+  font-size: 12px;
+
+  color: #64748b;
+}
+
+.report-coordinate-item strong {
+  display: block;
+
+  margin-top: 4px;
+
+  font-size: 13px;
+
+  color: #172033;
+}
+
+/* Mobile */
+@media (max-width: 700px) {
+
+  .report-drawer {
+    width: 100%;
+  }
+
+  .report-image-container img {
+    height: 210px;
+  }
+
+  .report-location-map {
+    height: 250px;
+  }
+
+  .report-coordinates {
+    grid-template-columns: 1fr;
+  }
+}
+/* =========================================================
+   SAFEWALK REPORT DRAWER - FINAL FIX
+   ========================================================= */
+
+/* Leaflet maps can create very high z-index layers.
+   The report modal must always be above them. */
+
+.drawer-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+
+  z-index: 50000 !important;
+
+  display: flex;
+  justify-content: flex-end;
+
+  background: rgba(25, 35, 50, 0.58);
+
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+
+  isolation: isolate;
+}
+
+/* Make sure the drawer itself is above everything */
+.drawer-backdrop .report-drawer {
+  position: relative !important;
+
+  z-index: 50001 !important;
+
+  width: min(560px, 100%);
+  height: 100vh;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  padding: 0 22px 32px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(246, 249, 255, 0.98),
+      rgba(225, 232, 244, 0.98)
+    );
+
+  border-left:
+    1px solid rgba(255, 255, 255, 0.8);
+
+  box-shadow:
+    -20px 0 70px rgba(20, 30, 50, 0.30);
+
+  isolation: isolate;
+
+  scrollbar-width: thin;
+}
+
+/* ================================
+   DRAWER HEADER
+   ================================ */
+
+.drawer-header {
+  position: sticky;
+
+  top: 0;
+
+  z-index: 50010 !important;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 25px 0 20px;
+
+  margin-bottom: 18px;
+
+  background:
+    rgba(235, 241, 250, 0.94);
+
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+
+  border-bottom:
+    1px solid rgba(255, 255, 255, 0.65);
+}
+
+.drawer-header h2 {
+  margin: 5px 0 0;
+
+  font-size: 30px;
+
+  line-height: 1.1;
+
+  color: #172033;
+}
+
+/* ================================
+   PHOTO
+   ================================ */
+
+.drawer-photo-wrap {
+  width: 100%;
+
+  overflow: hidden;
+
+  border-radius: 24px;
+
+  margin-bottom: 18px;
+
+  background: #e6ebf2;
+
+  box-shadow:
+    0 14px 35px rgba(20, 30, 50, 0.14);
+}
+
+.drawer-photo {
+  display: block;
+
+  width: 100%;
+
+  height: 250px;
+
+  object-fit: cover;
+}
+
+/* ================================
+   ISSUE DETAILS
+   ================================ */
+
+.detail-card {
+  margin-top: 16px;
+
+  padding: 20px;
+
+  border-radius: 22px;
+
+  background:
+    rgba(255, 255, 255, 0.65);
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.8),
+    0 10px 30px rgba(20,30,50,.08);
+}
+
+.detail-card strong {
+  display: block;
+
+  margin-top: 7px;
+
+  font-size: 21px;
+
+  color: #172033;
+}
+
+.detail-card p {
+  margin: 9px 0 0;
+
+  line-height: 1.55;
+
+  color: #68768c;
+}
+
+/* ================================
+   LOCATION SECTION
+   ================================ */
+
+.report-location-section {
+  margin-top: 22px;
+
+  padding: 20px;
+
+  border-radius: 24px;
+
+  background:
+    rgba(255,255,255,.55);
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.75),
+    0 10px 30px rgba(20,30,50,.07);
+}
+
+.location-heading {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  margin-bottom: 13px;
+
+  color: #53627a;
+}
+
+.location-heading h3 {
+  margin: 5px 0 0;
+
+  font-size: 20px;
+
+  color: #172033;
+}
+
+/* ================================
+   REPORT MAP
+   ================================ */
+
+.report-location-map {
+  position: relative;
+
+  width: 100%;
+
+  height: 240px;
+
+  overflow: hidden;
+
+  border-radius: 20px;
+
+  isolation: isolate;
+
+  box-shadow:
+    0 12px 28px rgba(20,30,50,.14);
+}
+
+.report-location-map .safewalk-map-wrapper {
+  height: 100% !important;
+
+  width: 100% !important;
+
+  border-radius: 0 !important;
+
+  box-shadow: none !important;
+}
+
+.report-location-map .leaflet-container {
+  position: absolute !important;
+
+  inset: 0 !important;
+
+  width: 100% !important;
+
+  height: 100% !important;
+
+  z-index: 1 !important;
+}
+
+/* Keep Leaflet controls inside this map */
+.report-location-map .leaflet-control-container {
+  z-index: 20 !important;
+}
+
+/* ================================
+   COORDINATES
+   ================================ */
+
+.coordinates {
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+  margin-top: 12px;
+
+  padding: 14px;
+
+  border-radius: 16px;
+
+  background:
+    rgba(255,255,255,.72);
+
+  color: #53627a;
+}
+
+.coordinates > div {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 3px;
+}
+
+.coordinates span {
+  font-size: 11px;
+
+  text-transform: uppercase;
+
+  letter-spacing: .06em;
+
+  color: #7a879b;
+}
+
+.coordinates strong {
+  font-size: 13px;
+
+  color: #172033;
+}
+
+/* ================================
+   STATUS
+   ================================ */
+
+.status-section {
+  margin-top: 22px;
+
+  padding-bottom: 25px;
+}
+
+.status-actions {
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  gap: 10px;
+
+  margin-top: 12px;
+}
+
+.status-action {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 7px;
+
+  min-height: 48px;
+
+  border: none;
+
+  border-radius: 15px;
+
+  background:
+    rgba(255,255,255,.65);
+
+  color: #53627a;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    transform .2s ease,
+    box-shadow .2s ease,
+    background .2s ease;
+}
+
+.status-action svg {
+  width: 17px;
+  height: 17px;
+}
+
+.status-action:hover {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 8px 20px rgba(20,30,50,.10);
+}
+
+.status-action.selected {
+  background: #172033;
+
+  color: white;
+
+  box-shadow:
+    0 8px 20px rgba(20,30,50,.20);
+}
+
+.status-action:disabled {
+  opacity: .55;
+
+  cursor: not-allowed;
+
+  transform: none;
+}
+
+/* ================================
+   MOBILE
+   ================================ */
+
+@media (max-width: 700px) {
+
+  .drawer-backdrop .report-drawer {
+    width: 100%;
+
+    padding:
+      0 16px 25px;
+  }
+
+  .drawer-header h2 {
+    font-size: 25px;
+  }
+
+  .drawer-photo {
+    height: 220px;
+  }
+
+  .report-location-section {
+    padding: 15px;
+  }
+
+  .report-location-map {
+    height: 250px;
+  }
+
+  .status-actions {
+    grid-template-columns: 1fr;
+  }
+}
+/* =========================================================
+   SAFEWALK LEAFLET MAP
+   ========================================================= */
+
+.safewalk-map {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 22px;
+  background: #e9edf3;
+  isolation: isolate;
+}
+
+.safewalk-leaflet-map {
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  border-radius: inherit;
+  z-index: 1;
+}
+
+.safewalk-map .leaflet-container {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  font-family: inherit;
+}
+
+.safewalk-map .leaflet-control-zoom {
+  border: none !important;
+  box-shadow: 0 8px 20px rgba(20, 30, 50, 0.15) !important;
+}
+
+.safewalk-map .leaflet-control-zoom a {
+  border: none !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  color: #172033 !important;
+}
+
+.safewalk-map .leaflet-control-attribution {
+  background: rgba(255, 255, 255, 0.82) !important;
+  backdrop-filter: blur(8px);
+}
+
+/* =========================================================
+   CUSTOM SAFEWALK MARKER
+   ========================================================= */
+
+.safewalk-marker-wrapper {
+  background: transparent !important;
+  border: none !important;
+}
+
+.safewalk-marker {
+  position: relative;
+  width: 40px;
+  height: 48px;
+  filter: drop-shadow(
+    0 6px 8px rgba(0, 0, 0, 0.25)
+  );
+}
+
+.safewalk-marker::before {
+  content: "";
+
+  position: absolute;
+
+  left: 5px;
+  top: 2px;
+
+  width: 30px;
+  height: 30px;
+
+  background: #ef4444;
+
+  border: 3px solid #ffffff;
+
+  border-radius: 50% 50% 50% 0;
+
+  transform: rotate(-45deg);
+}
+
+.safewalk-marker-dot {
+  position: absolute;
+
+  left: 15px;
+  top: 12px;
+
+  width: 10px;
+  height: 10px;
+
+  background: #ffffff;
+
+  border-radius: 50%;
+
+  z-index: 3;
+}
+
+/* =========================================================
+   POPUP
+   ========================================================= */
+
+.safewalk-popup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 3px;
+}
+
+.safewalk-popup strong {
+  font-size: 13px;
+  color: #172033;
+}
+
+.safewalk-popup span {
+  font-size: 11px;
+  color: #68768c;
+}
+
+/* =========================================================
+   REPORT DRAWER
+   ========================================================= */
+
+.drawer-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+
+  z-index: 50000 !important;
+
+  display: flex;
+  justify-content: flex-end;
+  align-items: stretch;
+
+  background: rgba(20, 30, 45, 0.62);
+
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+
+  isolation: isolate;
+}
+
+.report-drawer {
+  position: relative !important;
+
+  z-index: 50001 !important;
+
+  width: min(570px, 100%);
+  height: 100vh;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(247, 250, 255, 0.98),
+      rgba(224, 232, 244, 0.98)
+    );
+
+  border-left:
+    1px solid rgba(255, 255, 255, 0.85);
+
+  box-shadow:
+    -25px 0 70px rgba(15, 25, 40, 0.30);
+
+  isolation: isolate;
+
+  scrollbar-width: thin;
+}
+
+.report-drawer > * {
+  position: relative;
+  z-index: 2;
+}
+
+.drawer-header {
+  position: sticky;
+
+  top: 0;
+
+  z-index: 100 !important;
+
+  display: flex;
+
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 23px 24px 18px;
+
+  background:
+    rgba(238, 243, 251, 0.94);
+
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+
+  border-bottom:
+    1px solid rgba(255, 255, 255, 0.7);
+}
+
+.drawer-header h2 {
+  margin: 5px 0 0;
+
+  color: #172033;
+
+  font-size: 29px;
+
+  line-height: 1.1;
+}
+
+.drawer-content {
+  padding: 20px 22px 35px;
+}
+
+/* =========================================================
+   DRAWER PHOTO
+   ========================================================= */
+
+.drawer-photo-wrap {
+  width: 100%;
+
+  margin-bottom: 18px;
+
+  overflow: hidden;
+
+  border-radius: 23px;
+
+  background: #e7ebf2;
+
+  box-shadow:
+    0 14px 35px rgba(20, 30, 50, 0.14);
+}
+
+.drawer-photo {
+  display: block;
+
+  width: 100%;
+
+  height: 250px;
+
+  object-fit: cover;
+}
+
+/* =========================================================
+   DETAIL CARD
+   ========================================================= */
+
+.detail-card {
+  padding: 19px;
+
+  border-radius: 21px;
+
+  background:
+    rgba(255, 255, 255, 0.68);
+
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 10px 30px rgba(20, 30, 50, 0.08);
+}
+
+.detail-card strong {
+  display: block;
+
+  margin-top: 7px;
+
+  font-size: 21px;
+
+  color: #172033;
+}
+
+.detail-card p {
+  margin: 9px 0 0;
+
+  color: #68768c;
+
+  line-height: 1.55;
+}
+
+/* =========================================================
+   REPORT LOCATION
+   ========================================================= */
+
+.report-location-section {
+  margin-top: 19px;
+
+  padding: 19px;
+
+  border-radius: 23px;
+
+  background:
+    rgba(255, 255, 255, 0.58);
+
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 10px 30px rgba(20, 30, 50, 0.07);
+}
+
+.location-heading {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  margin-bottom: 13px;
+
+  color: #53627a;
+}
+
+.location-heading h3 {
+  margin: 5px 0 0;
+
+  color: #172033;
+
+  font-size: 20px;
+}
+
+.report-location-section .safewalk-map {
+  border-radius: 19px;
+}
+
+/* =========================================================
+   COORDINATES
+   ========================================================= */
+
+.coordinates {
+  display: flex;
+
+  align-items: center;
+
+  gap: 11px;
+
+  margin-top: 12px;
+
+  padding: 13px 14px;
+
+  border-radius: 15px;
+
+  background:
+    rgba(255, 255, 255, 0.75);
+
+  color: #53627a;
+}
+
+.coordinates div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.coordinates span {
+  font-size: 10px;
+
+  text-transform: uppercase;
+
+  letter-spacing: 0.08em;
+
+  color: #7a879b;
+}
+
+.coordinates strong {
+  font-size: 13px;
+
+  color: #172033;
+}
+
+/* =========================================================
+   STATUS
+   ========================================================= */
+
+.status-section {
+  margin-top: 21px;
+}
+
+.status-actions {
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  gap: 9px;
+
+  margin-top: 11px;
+}
+
+.status-action {
+  min-height: 47px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 7px;
+
+  border: none;
+
+  border-radius: 14px;
+
+  background:
+    rgba(255, 255, 255, 0.72);
+
+  color: #53627a;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+.status-action:hover {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 8px 20px rgba(20, 30, 50, 0.10);
+}
+
+.status-action.selected {
+  background: #172033;
+
+  color: white;
+
+  box-shadow:
+    0 8px 22px rgba(20, 30, 50, 0.22);
+}
+
+.status-action:disabled {
+  opacity: 0.55;
+
+  cursor: not-allowed;
+
+  transform: none;
+}
+
+/* =========================================================
+   MAP ERROR
+   ========================================================= */
+
+.safewalk-map-error {
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
+  background:
+    rgba(235, 240, 247, 0.9);
+}
+
+.map-error-content {
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  gap: 6px;
+
+  text-align: center;
+}
+
+.map-error-content strong {
+  color: #172033;
+}
+
+.map-error-content span {
+  color: #68768c;
+
+  font-size: 13px;
+}
+
+/* =========================================================
+   SPINNING REFRESH ICON
+   ========================================================= */
+
+.spin {
+  animation:
+    safewalk-spin 0.8s linear infinite;
+}
+
+@keyframes safewalk-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 700px) {
+
+  .report-drawer {
+    width: 100%;
+  }
+
+  .drawer-header {
+    padding:
+      20px 17px 16px;
+  }
+
+  .drawer-content {
+    padding:
+      17px 15px 30px;
+  }
+
+  .drawer-header h2 {
+    font-size: 25px;
+  }
+
+  .drawer-photo {
+    height: 220px;
+  }
+
+  .report-location-section {
+    padding: 15px;
+  }
+
+  .status-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================================
+   REPORT STATUS CONTROLS
+   ========================================= */
+
+.current-status-box {
+  margin: 8px 0 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.38);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.current-status-box strong {
+  font-size: 0.9rem;
+  color: #182238;
+  letter-spacing: 0.02em;
+}
+
+.status-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.status-action {
+  position: relative;
+  min-height: 54px;
+  border: 1px solid rgba(70, 85, 110, 0.10);
+  border-radius: 15px;
+  padding: 12px 10px;
+
+  background: rgba(255, 255, 255, 0.52);
+  color: #53627a;
+
+  font-size: 0.68rem;
+  font-weight: 800;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.18s ease,
+    background 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.status-action:hover:not(:disabled) {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 8px 18px rgba(40, 55, 80, 0.12);
+}
+
+.status-action:active:not(:disabled) {
+  transform: translateY(0) scale(0.97);
+}
+
+.status-action.selected {
+  background: #182238;
+  color: white;
+  border-color: #182238;
+  box-shadow: 0 8px 20px rgba(24, 34, 56, 0.25);
+}
+
+.status-action:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.status-action svg {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+}
+
+.status-check {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+
+  width: 17px;
+  height: 17px;
+
+  border-radius: 50%;
+
+  background: white;
+  color: #182238;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.status-info,
+.status-success,
+.status-error {
+  margin-top: 12px;
+  padding: 11px 13px;
+  border-radius: 13px;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.status-info {
+  background: rgba(80, 110, 160, 0.10);
+  color: #53627a;
+}
+
+.status-success {
+  background: rgba(40, 160, 100, 0.10);
+  color: #26734b;
+}
+
+.status-error {
+  background: rgba(210, 60, 70, 0.10);
+  color: #a33a42;
+}
+
+@media (max-width: 520px) {
+  .status-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .status-action {
+    min-height: 50px;
+  }
+}
+
+/* =========================================
+   USER PIN SETUP
+   ========================================= */
+
+.login-card .pin-input + .pin-input {
+  margin-top: 10px;
+}
+
+.secondary-btn {
+  width: 100%;
+  margin-top: 10px;
+
+  min-height: 48px;
+
+  border: 0;
+  border-radius: 15px;
+
+  background: rgba(255, 255, 255, 0.55);
+  color: #53627a;
+
+  font-weight: 800;
+  font-size: 0.82rem;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.18s ease,
+    background 0.18s ease;
+}
+
+.secondary-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.85);
+  transform: translateY(-1px);
+}
+
+.secondary-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.success-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  margin-top: 12px;
+  padding: 11px 13px;
+
+  border-radius: 13px;
+
+  background: rgba(40, 160, 100, 0.10);
+  color: #26734b;
+
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.success-box svg {
+  flex-shrink: 0;
+}
+
+.error-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  margin-top: 12px;
+  padding: 11px 13px;
+
+  border-radius: 13px;
+
+  background: rgba(210, 60, 70, 0.10);
+  color: #a33a42;
+
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.error-box svg {
+  flex-shrink: 0;
+}
+/* =========================================================
+   SAFEWALK — FLOATING UI SYSTEM
+   ========================================================= */
+
+/* ---------- Floating keyframes ---------- */
+
+@keyframes safewalkFloat {
+    0%,
+    100% {
+        transform: translate3d(0, 0, 0);
+    }
+
+    50% {
+        transform: translate3d(0, -8px, 0);
+    }
+}
+
+@keyframes safewalkFloatSoft {
+    0%,
+    100% {
+        transform: translate3d(0, 0, 0);
+    }
+
+    50% {
+        transform: translate3d(0, -5px, 0);
+    }
+}
+
+@keyframes safewalkFloatSlow {
+    0%,
+    100% {
+        transform: translate3d(0, 0, 0);
+    }
+
+    50% {
+        transform: translate3d(0, -12px, 0);
+    }
+}
+
+@keyframes safewalkPulse {
+    0% {
+        transform: scale(0.96);
+        opacity: 0.45;
+    }
+
+    50% {
+        transform: scale(1.04);
+        opacity: 0.75;
+    }
+
+    100% {
+        transform: scale(0.96);
+        opacity: 0.45;
+    }
+}
+
+@keyframes safewalkGlow {
+    0%,
+    100% {
+        box-shadow:
+            0 10px 35px rgba(0, 0, 0, 0.08);
+    }
+
+    50% {
+        box-shadow:
+            0 18px 45px rgba(65, 224, 190, 0.15);
+    }
+}
+
+@keyframes safewalkOrb {
+    0% {
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+
+    33% {
+        transform: translate3d(18px, -15px, 0) scale(1.05);
+    }
+
+    66% {
+        transform: translate3d(-12px, 12px, 0) scale(0.96);
+    }
+
+    100% {
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+}
+
+
+/* =========================================================
+   LOGIN PAGE
+   ========================================================= */
+
+.login-shell {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+}
+
+/* Background floating lights */
+
+.login-shell::before,
+.login-shell::after {
+    content: "";
+    position: absolute;
+    pointer-events: none;
+    border-radius: 50%;
+    filter: blur(2px);
+    z-index: -1;
+}
+
+.login-shell::before {
+    width: 220px;
+    height: 220px;
+    left: -80px;
+    top: 10%;
+    background:
+        radial-gradient(
+            circle,
+            rgba(92, 240, 205, 0.18),
+            transparent 68%
+        );
+
+    animation:
+        safewalkOrb 8s ease-in-out infinite;
+}
+
+.login-shell::after {
+    width: 280px;
+    height: 280px;
+    right: -100px;
+    bottom: 5%;
+    background:
+        radial-gradient(
+            circle,
+            rgba(110, 140, 255, 0.15),
+            transparent 70%
+        );
+
+    animation:
+        safewalkOrb 11s ease-in-out infinite reverse;
+}
+
+
+/* Existing orbit elements */
+
+.login-orbit {
+    pointer-events: none;
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid rgba(90, 235, 200, 0.18);
+    animation:
+        safewalkOrb 9s ease-in-out infinite;
+}
+
+.orbit-a {
+    width: 240px;
+    height: 240px;
+    left: 5%;
+    top: 15%;
+}
+
+.orbit-b {
+    width: 340px;
+    height: 340px;
+    right: 3%;
+    bottom: 5%;
+    animation-duration: 13s;
+    animation-direction: reverse;
+}
+
+
+/* Login card */
+
+.login-card {
+    position: relative;
+    animation:
+        safewalkFloatSlow 5.5s ease-in-out infinite,
+        safewalkGlow 4s ease-in-out infinite;
+    will-change: transform;
+}
+
+
+/* Login shield */
+
+.login-icon {
+    animation:
+        safewalkFloatSoft 3.8s ease-in-out infinite;
+    will-change: transform;
+}
+
+
+/* Login brand */
+
+.login-card .brand {
+    animation:
+        safewalkFloatSoft 5s ease-in-out infinite;
+}
+
+
+/* =========================================================
+   USER PORTAL
+   ========================================================= */
+
+.user-page {
+    position: relative;
+    isolation: isolate;
+}
+
+.user-page::before {
+    content: "";
+    position: fixed;
+    width: 260px;
+    height: 260px;
+    top: 20%;
+    left: -100px;
+    border-radius: 50%;
+    pointer-events: none;
+
+    background:
+        radial-gradient(
+            circle,
+            rgba(83, 230, 197, 0.10),
+            transparent 70%
+        );
+
+    filter: blur(8px);
+
+    animation:
+        safewalkOrb 12s ease-in-out infinite;
+
+    z-index: -1;
+}
+
+
+/* Header */
+
+.user-page .topbar {
+    animation:
+        safewalkFloatSoft 6s ease-in-out infinite;
+}
+
+
+/* Hero */
+
+.user-page .hero-copy {
+    animation:
+        safewalkFloatSoft 6.5s ease-in-out infinite;
+}
+
+
+/* Main cards */
+
+.user-page .map-card,
+.user-page .report-card,
+.user-page .recent-section {
+    animation:
+        safewalkFloat 6s ease-in-out infinite;
+
+    animation-delay:
+        var(--float-delay, 0s);
+
+    will-change: transform;
+}
+
+
+/* Different speeds */
+
+.user-page .map-card {
+    --float-delay: -1s;
+}
+
+.user-page .report-card {
+    --float-delay: -2.5s;
+}
+
+.user-page .recent-section {
+    --float-delay: -4s;
+}
+
+
+/* Activity cards */
+
+.user-page .activity-card {
+    transition:
+        transform 0.35s ease,
+        box-shadow 0.35s ease;
+}
+
+.user-page .activity-card:hover {
+    transform:
+        translateY(-7px)
+        scale(1.01);
+}
+
+
+/* Issue buttons */
+
+.user-page .issue-chip {
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+.user-page .issue-chip:hover {
+    transform:
+        translateY(-4px);
+}
+
+
+/* Primary buttons */
+
+.user-page .primary-btn,
+.user-page .secondary-btn,
+.user-page .round-btn {
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+.user-page .primary-btn:hover,
+.user-page .secondary-btn:hover,
+.user-page .round-btn:hover {
+    transform:
+        translateY(-3px);
+}
+
+
+/* =========================================================
+   ADMIN PORTAL
+   ========================================================= */
+
+.admin-page {
+    position: relative;
+    isolation: isolate;
+}
+
+.admin-page::before {
+    content: "";
+    position: fixed;
+    width: 320px;
+    height: 320px;
+    right: -130px;
+    top: 15%;
+    border-radius: 50%;
+
+    background:
+        radial-gradient(
+            circle,
+            rgba(104, 125, 255, 0.10),
+            transparent 70%
+        );
+
+    filter: blur(10px);
+
+    pointer-events: none;
+
+    animation:
+        safewalkOrb 14s ease-in-out infinite reverse;
+
+    z-index: -1;
+}
+
+
+/* Admin header */
+
+.admin-page .admin-topbar {
+    animation:
+        safewalkFloatSoft 6.5s ease-in-out infinite;
+}
+
+
+/* Welcome */
+
+.admin-page .admin-welcome {
+    animation:
+        safewalkFloatSoft 7s ease-in-out infinite;
+}
+
+
+/* Statistics */
+
+.admin-page .stats-grid .stat-card,
+.admin-page .stats-grid > div {
+    animation:
+        safewalkFloat 5.5s ease-in-out infinite;
+
+    animation-delay:
+        var(--float-delay, 0s);
+
+    will-change: transform;
+}
+
+.admin-page .stats-grid > :nth-child(1) {
+    --float-delay: 0s;
+}
+
+.admin-page .stats-grid > :nth-child(2) {
+    --float-delay: -1s;
+}
+
+.admin-page .stats-grid > :nth-child(3) {
+    --float-delay: -2s;
+}
+
+.admin-page .stats-grid > :nth-child(4) {
+    --float-delay: -3s;
+}
+
+
+/* Map */
+
+.admin-page .admin-map-card {
+    animation:
+        safewalkFloatSoft 7s ease-in-out infinite;
+}
+
+
+/* Reports panel */
+
+.admin-page .reports-panel {
+    animation:
+        safewalkFloatSoft 8s ease-in-out infinite;
+}
+
+
+/* Report cards */
+
+.admin-page .report-card,
+.admin-page .case-card {
+    transition:
+        transform 0.3s ease,
+        box-shadow 0.3s ease;
+}
+
+.admin-page .report-card:hover,
+.admin-page .case-card:hover {
+    transform:
+        translateY(-6px);
+}
+
+
+/* Filter buttons */
+
+.admin-page .filter-row button {
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+.admin-page .filter-row button:hover {
+    transform:
+        translateY(-3px);
+}
+
+
+/* Refresh button */
+
+.admin-page .refresh-btn {
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+.admin-page .refresh-btn:hover {
+    transform:
+        translateY(-3px)
+        rotate(-1deg);
+}
+
+
+/* =========================================================
+   MAP LOCATION PULSE
+   ========================================================= */
+
+.map-card .map-placeholder svg,
+.admin-map-card .map-placeholder svg {
+    animation:
+        safewalkPulse 2.8s ease-in-out infinite;
+}
+
+
+/* =========================================================
+   GLOBAL ICON FLOAT
+   ========================================================= */
+
+.brand-mark {
+    animation:
+        safewalkFloatSoft 4s ease-in-out infinite;
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 700px) {
+
+    .login-card {
+        animation-duration: 6.5s;
+    }
+
+    .user-page .map-card,
+    .user-page .report-card,
+    .user-page .recent-section {
+        animation-duration: 7s;
+    }
+
+    .admin-page .admin-map-card,
+    .admin-page .reports-panel {
+        animation-duration: 8s;
+    }
+
+    .login-orbit {
+        opacity: 0.55;
+    }
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .login-card,
+    .login-icon,
+    .login-card .brand,
+    .login-orbit,
+    .user-page .topbar,
+    .user-page .hero-copy,
+    .user-page .map-card,
+    .user-page .report-card,
+    .user-page .recent-section,
+    .admin-page .admin-topbar,
+    .admin-page .admin-welcome,
+    .admin-page .stats-grid .stat-card,
+    .admin-page .stats-grid > div,
+    .admin-page .admin-map-card,
+    .admin-page .reports-panel,
+    .brand-mark {
+        animation: none !important;
+    }
+
+    .user-page .activity-card:hover,
+    .user-page .issue-chip:hover,
+    .admin-page .report-card:hover,
+    .admin-page .case-card:hover {
+        transform: none !important;
+    }
+}

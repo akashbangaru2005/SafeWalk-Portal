@@ -1,0 +1,29 @@
+**/node_modules/
+**/dist/
+**/target/
+backend/uploads/
+frontend/.env
+.env
+# Java / Maven
+target/
+*.class
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Environment / secrets
+.env
+*.env
+
+# Logs
+*.log
+
+# Uploaded files
+backend/uploads/
+uploads/
+
+# OS
+.DS_Store
+Thumbs.db
