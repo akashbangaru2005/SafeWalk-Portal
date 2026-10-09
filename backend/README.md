@@ -1,115 +1,29 @@
-# SafeWalk Backend — 4-Digit PIN + Mobile OTP
+# SafeWalk Backend
+Spring Boot 3.2.5 / Java 21 / MySQL (Aiven).
 
-## Backend location
+Required environment variables:
+MYSQL_HOST
+MYSQL_PORT
+MYSQL_DATABASE
+MYSQL_USERNAME
+MYSQL_PASSWORD
 
-Copy this backend into:
+Optional:
+SAFEWALK_ADMIN_PASSWORD (default 1234567890)
+PORT (default 10000)
 
-C:\Users\akash\Downloads\Safewalk-Portal-Complete\backend
+Local PowerShell:
+$env:MYSQL_HOST="your-aiven-host"
+$env:MYSQL_PORT="14504"
+$env:MYSQL_DATABASE="defaultdb"
+$env:MYSQL_USERNAME="avnadmin"
+$env:MYSQL_PASSWORD="your-aiven-password"
 
-## Important
-
-Delete old duplicate Java files before copying:
-
-- src/main/java/com/safewalk/AuthService.java
-- Any old UserAccountRepository method such as:
-  findByPinAndActiveTrue(String pin)
-
-Only keep:
-
-- com.safewalk.service.AuthService
-- the new UserAccountRepository
-
-## Database
-
-Create the database:
-
-CREATE DATABASE safewalk;
-
-## Development OTP
-
-By default:
-
-OTP_DEV_MODE=true
-
-The OTP will be printed in the Spring Boot console.
-
-Example:
-
-SafeWalk OTP
-Phone  : +919876543210
-Purpose: REGISTER
-OTP    : 123456
-
-This is for local testing only.
-
-## Real SMS OTP with Twilio
-
-Set:
-
-OTP_DEV_MODE=false
-TWILIO_ACCOUNT_SID=...
-TWILIO_AUTH_TOKEN=...
-TWILIO_FROM_NUMBER=...
-
-Do not commit these secrets to GitHub.
-
-## Run
-
+Then:
 mvn clean
+mvn compile
 mvn spring-boot:run
 
-## API flow
-
-### Existing user login
-POST /api/auth/user
-{
-  "pin": "1234"
-}
-
-### Check PIN
-POST /api/auth/user/check
-{
-  "pin": "1234"
-}
-
-### New registration — request OTP
-POST /api/auth/user/register/request-otp
-{
-  "phone": "9876543210"
-}
-
-### New registration — verify OTP and create account
-POST /api/auth/user/register/verify-otp
-{
-  "phone": "9876543210",
-  "otp": "123456",
-  "pin": "1234"
-}
-
-### Forgot PIN — request OTP
-POST /api/auth/forgot-pin/request-otp
-{
-  "phone": "9876543210"
-}
-
-### Forgot PIN — verify OTP
-POST /api/auth/forgot-pin/verify-otp
-{
-  "phone": "9876543210",
-  "otp": "123456"
-}
-
-Response contains resetToken.
-
-### Forgot PIN — set new PIN
-POST /api/auth/forgot-pin/reset
-{
-  "resetToken": "...",
-  "newPin": "5678"
-}
-
-### Admin
-POST /api/auth/admin
-{
-  "password": "1234567890"
-}
+Health: http://localhost:10000/health
+Demo user on an empty DB: PIN 1234, recovery code 123456.
+Never commit secrets.

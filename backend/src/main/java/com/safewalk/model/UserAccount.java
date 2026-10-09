@@ -8,20 +8,25 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "user_accounts")
+@Table(name = "users")
 public class UserAccount {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "pin_hash", nullable = false, length = 100)
+    @Column(name = "pin_hash", nullable = false)
     private String pinHash;
 
-    @Column(name = "recovery_code_hash", nullable = false, length = 100)
+    @Column(name = "recovery_code_hash")
     private String recoveryCodeHash;
 
     public UserAccount() {
+    }
+
+    public UserAccount(String pinHash, String recoveryCodeHash) {
+        this.pinHash = pinHash;
+        this.recoveryCodeHash = recoveryCodeHash;
     }
 
     public Long getId() {

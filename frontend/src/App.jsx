@@ -1,8 +1,5 @@
-import React, {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import React from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   Camera,
@@ -19,18 +16,10 @@ import {
   Clock3,
   Navigation,
   LocateFixed,
-  RefreshCw,
-  MapPinned,
 } from "lucide-react";
 
 import { api } from "./api";
 import MapView from "./MapView";
-
-/*
-|--------------------------------------------------------------------------
-| Issue types
-|--------------------------------------------------------------------------
-*/
 
 const issueTypes = [
   ["OPEN_MANHOLE", "Open manhole"],
@@ -41,44 +30,57 @@ const issueTypes = [
   ["OTHER", "Other hazard"],
 ];
 
-/*
-|--------------------------------------------------------------------------
-| Utility
-|--------------------------------------------------------------------------
-*/
+/* ---------------------------------------------------------
+   Helpers
+--------------------------------------------------------- */
 
-function formatIssue(type) {
+function normalizeReports(data) {
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  if (Array.isArray(data?.reports)) {
+    return data.reports;
+  }
+
+  if (Array.isArray(data?.data)) {
+    return data.data;
+  }
+
+  return [];
+}
+
+function formatIssue(issueType) {
   return (
-    issueTypes.find(
-      ([value]) => value === type
-    )?.[1] || type || "Unknown issue"
+    issueTypes.find((item) => item[0] === issueType)?.[1] ||
+    issueType ||
+    "Unknown issue"
   );
 }
 
 function formatStatus(status) {
-  return String(status || "")
-    .replaceAll("_", " ");
+  return String(status || "OPEN").replaceAll("_", " ");
 }
 
-function formatCoordinates(lat, lng) {
-  const latitude = Number(lat);
-  const longitude = Number(lng);
-
-  if (
-    !Number.isFinite(latitude) ||
-    !Number.isFinite(longitude)
-  ) {
-    return "Location unavailable";
+function resolvePhotoUrl(photoUrl) {
+  if (!photoUrl) return null;
+  if (photoUrl.startsWith("http://") || photoUrl.startsWith("https://") || photoUrl.startsWith("data:")) {
+    return photoUrl;
   }
-
-  return `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+  const baseUrl = (api?.base || "").replace(/\/$/, "");
+  const path = photoUrl.startsWith("/") ? photoUrl : `/${photoUrl}`;
+  return `${baseUrl}${path}`;
 }
 
-/*
-|--------------------------------------------------------------------------
-| GPS hook
-|--------------------------------------------------------------------------
-*/
+function parseCoordinate(val) {
+  if (val === null || val === undefined || val === "") return null;
+  const num = Number(val);
+  return Number.isFinite(num) ? num : null;
+}
+
+/* ---------------------------------------------------------
+   Location Hook
+--------------------------------------------------------- */
 
 function useLocation() {
   const [location, setLocation] = useState(null);
@@ -87,10 +89,7 @@ function useLocation() {
 
   const locate = () => {
     if (!navigator.geolocation) {
-      setError(
-        "Location is not supported by this browser."
-      );
-
+      setError("Location is not supported by this browser.");
       return;
     }
 
@@ -98,28 +97,25 @@ function useLocation() {
     setError("");
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      (p) => {
         setLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-          accuracy: position.coords.accuracy,
+          lat: p.coords.latitude,
+          lng: p.coords.longitude,
+          accuracy: p.coords.accuracy,
         });
 
         setLoading(false);
       },
-
-      (error) => {
+      (e) => {
         setError(
-          error.message ||
-            "Location permission is required."
+          e.message || "Location permission is required."
         );
 
         setLoading(false);
       },
-
       {
         enableHighAccuracy: true,
-        timeout: 15000,
+        timeout: 12000,
         maximumAge: 30000,
       }
     );
@@ -133,181 +129,75 @@ function useLocation() {
   };
 }
 
-/*
-|--------------------------------------------------------------------------
-| Brand
-|--------------------------------------------------------------------------
-*/
+/* ---------------------------------------------------------
+   Brand
+--------------------------------------------------------- */
 
 function Brand({ admin = false }) {
   return (
     <div className="brand">
-
       <div className="brand-mark">
-        <ShieldCheck size={21} />
+        <ShieldCheck size={20} />
       </div>
 
-      <div className="brand-copy">
+      <div>
         <strong>SafeWalk</strong>
-
         <span>
-          {admin
-            ? "Municipal Control"
-            : "Community Safety"}
+          {admin ? "Municipal Control" : "Community Safety"}
         </span>
       </div>
-
     </div>
   );
 }
 
-/*
-|--------------------------------------------------------------------------
-| Login
-|--------------------------------------------------------------------------
-*/
+/* ---------------------------------------------------------
+   Login
+--------------------------------------------------------- */
 
 function PinLogin({ onUser, onAdmin }) {
   const [mode, setMode] = useState("user");
-
   const [value, setValue] = useState("");
-  const [confirmPin, setConfirmPin] = useState("");
-
-  const [step, setStep] = useState("login");
-  // login | create
-
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
 
-  const resetForm = () => {
-    setValue("");
-    setConfirmPin("");
-    setStep("login");
+  const submit = async () => {
     setError("");
-    setMessage("");
-  };
 
-  const switchMode = (nextMode) => {
-    setMode(nextMode);
-    resetForm();
-  };
+    const expected = mode === "user" ? 4 : 10;
 
-  const checkUserPin = async () => {
-    setError("");
-    setMessage("");
-
-    if (!/^\d{4}$/.test(value)) {
-      setError("Enter exactly 4 digits.");
+    if (value.length !== expected) {
+      setError(`Enter exactly ${expected} digits.`);
       return;
     }
 
     setBusy(true);
 
     try {
-      const result = await api.checkUserPin(value);
+      const result =
+        mode === "user"
+          ? await api.userLogin(value)
+          : await api.adminLogin(value);
 
-      if (result.exists) {
-        // Existing user
-        const loginResult = await api.userLogin(value);
-
-        onUser(loginResult);
+      if (mode === "user") {
+        onUser(result);
       } else {
-        // New user
-        setStep("create");
-        setConfirmPin("");
-        setMessage(
-          "This PIN is available. Create your SafeWalk account."
-        );
+        onAdmin(result);
       }
     } catch (e) {
       setError(
-        e.message ||
-          "Unable to check this PIN. Please try again."
+        e?.message || "Unable to sign in."
       );
     } finally {
       setBusy(false);
-    }
-  };
-
-  const createUser = async () => {
-    setError("");
-    setMessage("");
-
-    if (!/^\d{4}$/.test(value)) {
-      setError("PIN must contain exactly 4 digits.");
-      return;
-    }
-
-    if (value !== confirmPin) {
-      setError("PINs do not match.");
-      return;
-    }
-
-    setBusy(true);
-
-    try {
-      const result = await api.registerUser(value);
-
-      setMessage("Account created successfully.");
-
-      onUser(result);
-    } catch (e) {
-      setError(
-        e.message ||
-          "Unable to create the account."
-      );
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const submitAdmin = async () => {
-    setError("");
-    setMessage("");
-
-    if (!/^\d{10}$/.test(value)) {
-      setError("Enter exactly 10 digits.");
-      return;
-    }
-
-    setBusy(true);
-
-    try {
-      const result = await api.adminLogin(value);
-
-      onAdmin(result);
-    } catch (e) {
-      setError(
-        e.message ||
-          "Invalid administrator password."
-      );
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleSubmit = () => {
-    if (mode === "admin") {
-      submitAdmin();
-      return;
-    }
-
-    if (step === "create") {
-      createUser();
-    } else {
-      checkUserPin();
     }
   };
 
   return (
     <div className="login-shell">
-
       <div className="login-orbit orbit-a" />
       <div className="login-orbit orbit-b" />
 
       <section className="glass login-card">
-
         <Brand />
 
         <div className="login-icon">
@@ -320,30 +210,25 @@ function PinLogin({ onUser, onAdmin }) {
 
         <h1>
           {mode === "user"
-            ? step === "create"
-              ? "Create your SafeWalk PIN"
-              : "Report a hazard"
+            ? "Report a hazard"
             : "Admin control"}
         </h1>
 
         <p className="muted">
-
           {mode === "user"
-            ? step === "create"
-              ? "Confirm your 4-digit PIN to create your personal SafeWalk account."
-              : "Use your personal 4-digit PIN to access your community safety space."
+            ? "Use your unique 4-digit PIN to enter your community safety space."
             : "Municipal officers use the 10-digit admin password."}
-
         </p>
 
-        {/* USER / ADMIN SWITCH */}
-
         <div className="segmented">
-
           <button
             type="button"
             className={mode === "user" ? "active" : ""}
-            onClick={() => switchMode("user")}
+            onClick={() => {
+              setMode("user");
+              setValue("");
+              setError("");
+            }}
           >
             User
           </button>
@@ -351,138 +236,70 @@ function PinLogin({ onUser, onAdmin }) {
           <button
             type="button"
             className={mode === "admin" ? "active" : ""}
-            onClick={() => switchMode("admin")}
+            onClick={() => {
+              setMode("admin");
+              setValue("");
+              setError("");
+            }}
           >
             Admin
           </button>
-
         </div>
-
-        {/* FIRST PIN */}
 
         <input
           className="pin-input"
           type="password"
           inputMode="numeric"
-          autoComplete="off"
           maxLength={mode === "user" ? 4 : 10}
           placeholder={
             mode === "user"
-              ? "Enter 4-digit PIN"
-              : "Enter 10-digit password"
+              ? "••••"
+              : "••••••••••"
           }
           value={value}
-          onChange={(e) => {
+          onChange={(e) =>
             setValue(
               e.target.value.replace(/\D/g, "")
-            );
-            setError("");
-          }}
+            )
+          }
           onKeyDown={(e) => {
-            if (
-              e.key === "Enter" &&
-              step !== "create"
-            ) {
-              handleSubmit();
+            if (e.key === "Enter") {
+              submit();
             }
           }}
           autoFocus
         />
 
-        {/* CONFIRM PIN */}
-
-        {mode === "user" && step === "create" && (
-          <input
-            className="pin-input"
-            type="password"
-            inputMode="numeric"
-            autoComplete="off"
-            maxLength={4}
-            placeholder="Confirm 4-digit PIN"
-            value={confirmPin}
-            onChange={(e) => {
-              setConfirmPin(
-                e.target.value.replace(/\D/g, "")
-              );
-              setError("");
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                handleSubmit();
-              }
-            }}
-          />
-        )}
-
-        {/* MESSAGE */}
-
-        {message && (
-          <div className="success-box">
-            <CheckCircle2 size={17} />
-            <span>{message}</span>
-          </div>
-        )}
-
-        {/* ERROR */}
-
         {error && (
           <div className="error-box">
             <CircleAlert size={17} />
-            <span>{error}</span>
+            {error}
           </div>
         )}
 
-        {/* MAIN BUTTON */}
-
         <button
-          type="button"
           className="primary-btn"
-          onClick={handleSubmit}
+          onClick={submit}
           disabled={busy}
         >
-          {busy
-            ? "Please wait..."
-            : mode === "user" && step === "create"
-              ? "Create account"
-              : "Continue"}
-
+          {busy ? "Checking..." : "Continue"}
           <ChevronRight size={19} />
         </button>
 
-        {/* BACK BUTTON */}
-
-        {mode === "user" && step === "create" && (
-          <button
-            type="button"
-            className="secondary-btn"
-            onClick={resetForm}
-            disabled={busy}
-          >
-            Use another PIN
-          </button>
-        )}
-
         <div className="login-note">
-
           <CheckCircle2 size={16} />
-
           <span>
-            Your PIN is securely stored and belongs only to your account.
+            Encrypted session token · Mobile-first access
           </span>
-
         </div>
-
       </section>
-
     </div>
   );
 }
 
-/*
-|--------------------------------------------------------------------------
-| User Page
-|--------------------------------------------------------------------------
-*/
+/* ---------------------------------------------------------
+   User Page
+--------------------------------------------------------- */
 
 function UserPage({ session, logout }) {
   const {
@@ -492,47 +309,36 @@ function UserPage({ session, logout }) {
     locate,
   } = useLocation();
 
-  const [photo, setPhoto] =
-    useState(null);
-
-  const [preview, setPreview] =
-    useState("");
-
+  const [photo, setPhoto] = useState(null);
+  const [preview, setPreview] = useState("");
   const [issueType, setIssueType] =
     useState("OPEN_MANHOLE");
-
   const [description, setDescription] =
     useState("");
-
   const [address, setAddress] =
     useState("");
-
   const [submitting, setSubmitting] =
     useState(false);
-
   const [message, setMessage] =
     useState("");
-
   const [reports, setReports] =
     useState([]);
 
-  /*
-  | Load location and reports
-  */
-
+  /* Load location + reports */
   useEffect(() => {
     locate();
 
     api
       .mine(session.token)
-      .then(setReports)
-      .catch(() => {});
+      .then((data) => {
+        setReports(normalizeReports(data));
+      })
+      .catch(() => {
+        setReports([]);
+      });
   }, [session.token]);
 
-  /*
-  | Attach coordinates to address field
-  */
-
+  /* Attach coordinates to address */
   useEffect(() => {
     if (!location) {
       return;
@@ -543,28 +349,18 @@ function UserPage({ session, logout }) {
     );
   }, [location]);
 
-  /*
-  | Photo selection
-  */
-
+  /* Photo selection */
   const selectPhoto = (file) => {
     if (!file) {
       return;
     }
 
     setPhoto(file);
-
-    setPreview(
-      URL.createObjectURL(file)
-    );
-
+    setPreview(URL.createObjectURL(file));
     setMessage("");
   };
 
-  /*
-  | Submit report
-  */
-
+  /* Submit report */
   const submit = async () => {
     setMessage("");
 
@@ -572,7 +368,6 @@ function UserPage({ session, logout }) {
       setMessage(
         "Please capture or select a photo first."
       );
-
       return;
     }
 
@@ -580,45 +375,20 @@ function UserPage({ session, logout }) {
       setMessage(
         "Please allow location access before submitting."
       );
-
       return;
     }
 
     setSubmitting(true);
 
     try {
-      const form =
-        new FormData();
+      const form = new FormData();
 
-      form.append(
-        "photo",
-        photo
-      );
-
-      form.append(
-        "issueType",
-        issueType
-      );
-
-      form.append(
-        "description",
-        description
-      );
-
-      form.append(
-        "latitude",
-        location.lat
-      );
-
-      form.append(
-        "longitude",
-        location.lng
-      );
-
-      form.append(
-        "address",
-        address
-      );
+      form.append("photo", photo);
+      form.append("issueType", issueType);
+      form.append("description", description);
+      form.append("latitude", location.lat);
+      form.append("longitude", location.lng);
+      form.append("address", address);
 
       await api.createReport(
         session.token,
@@ -626,7 +396,7 @@ function UserPage({ session, logout }) {
       );
 
       setMessage(
-        "Report submitted successfully. Municipal officers can now see the photo and exact location."
+        "Report submitted successfully. Municipal officers can now see the location and photo."
       );
 
       setPhoto(null);
@@ -634,30 +404,28 @@ function UserPage({ session, logout }) {
       setDescription("");
 
       const updated =
-        await api.mine(
-          session.token
-        );
+        await api.mine(session.token);
 
-      setReports(updated);
-
-    } catch (error) {
+      setReports(
+        normalizeReports(updated)
+      );
+    } catch (e) {
       setMessage(
-        error?.message ||
+        e?.message ||
           "Unable to submit the report."
       );
-
     } finally {
       setSubmitting(false);
     }
   };
 
+  const safeReports = Array.isArray(reports) ? reports : [];
+
   return (
     <div className="user-page">
 
       {/* TOP BAR */}
-
       <header className="topbar glass">
-
         <Brand />
 
         <button
@@ -668,15 +436,12 @@ function UserPage({ session, logout }) {
         >
           <LogOut size={19} />
         </button>
-
       </header>
 
       <main className="user-main">
 
         {/* HERO */}
-
         <section className="hero-copy">
-
           <p className="eyebrow">
             COMMUNITY REPORTING
           </p>
@@ -688,27 +453,22 @@ function UserPage({ session, logout }) {
           </h1>
 
           <p className="muted">
-            Help keep your walking routes safe
-            by sending a photo and exact location
-            to the municipal team.
+            Help keep your walking routes safe by
+            sending a photo and exact location to
+            the municipal team.
           </p>
-
         </section>
 
         {/* MAP */}
-
         <section className="glass map-card">
 
           <div className="section-heading">
-
             <div>
               <span className="section-kicker">
                 LIVE LOCATION
               </span>
 
-              <h2>
-                Your walking area
-              </h2>
+              <h2>Your walking area</h2>
             </div>
 
             <button
@@ -719,7 +479,6 @@ function UserPage({ session, logout }) {
             >
               <LocateFixed size={18} />
             </button>
-
           </div>
 
           {location ? (
@@ -727,11 +486,9 @@ function UserPage({ session, logout }) {
               lat={location.lat}
               lng={location.lng}
               markerLabel="Your location"
-              height={360}
             />
           ) : (
             <div className="map-placeholder">
-
               <MapPin size={30} />
 
               <strong>
@@ -742,67 +499,54 @@ function UserPage({ session, logout }) {
 
               <span>
                 {locationError ||
-                  "Allow GPS access to attach your location."}
+                  "Tap the button to enable GPS."}
               </span>
 
               <button
-                type="button"
                 className="secondary-btn"
                 onClick={locate}
               >
                 Enable location
               </button>
-
             </div>
           )}
 
           {location && (
             <div className="coordinate-row">
-
               <Navigation size={16} />
 
               <span>
-                {location.lat.toFixed(6)},{" "}
-                {location.lng.toFixed(6)}
+                {location.lat.toFixed(5)},{" "}
+                {location.lng.toFixed(5)}
               </span>
 
               <small>
                 ±{Math.round(location.accuracy)}m
               </small>
-
             </div>
           )}
-
         </section>
 
-        {/* NEW REPORT */}
-
+        {/* REPORT FORM */}
         <section className="glass report-card">
 
           <div className="section-heading">
-
             <div>
               <span className="section-kicker">
                 NEW REPORT
               </span>
 
-              <h2>
-                What did you find?
-              </h2>
+              <h2>What did you find?</h2>
             </div>
 
             <CircleAlert size={22} />
-
           </div>
-
-          {/* ISSUE */}
 
           <label className="field-label">
             Issue type
           </label>
 
           <div className="issue-grid">
-
             {issueTypes.map(
               ([value, label]) => (
                 <button
@@ -821,19 +565,14 @@ function UserPage({ session, logout }) {
                 </button>
               )
             )}
-
           </div>
-
-          {/* PHOTO */}
 
           <label className="field-label">
             Photo evidence
           </label>
 
           <div className="photo-area">
-
             {preview ? (
-
               <div className="preview-wrap">
 
                 <img
@@ -853,13 +592,10 @@ function UserPage({ session, logout }) {
                 </button>
 
               </div>
-
             ) : (
-
               <div className="photo-actions">
 
                 <label className="camera-btn">
-
                   <Camera size={27} />
 
                   <strong>
@@ -874,17 +610,15 @@ function UserPage({ session, logout }) {
                     type="file"
                     accept="image/*"
                     capture="environment"
-                    onChange={(event) =>
+                    onChange={(e) =>
                       selectPhoto(
-                        event.target.files?.[0]
+                        e.target.files?.[0]
                       )
                     }
                   />
-
                 </label>
 
                 <label className="upload-btn">
-
                   <Upload size={25} />
 
                   <strong>
@@ -898,22 +632,17 @@ function UserPage({ session, logout }) {
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={(event) =>
+                    onChange={(e) =>
                       selectPhoto(
-                        event.target.files?.[0]
+                        e.target.files?.[0]
                       )
                     }
                   />
-
                 </label>
 
               </div>
-
             )}
-
           </div>
-
-          {/* DESCRIPTION */}
 
           <label className="field-label">
             Short description
@@ -921,65 +650,49 @@ function UserPage({ session, logout }) {
 
           <textarea
             value={description}
-            onChange={(event) =>
-              setDescription(
-                event.target.value
-              )
+            onChange={(e) =>
+              setDescription(e.target.value)
             }
             placeholder="Example: Open manhole near the bus stop..."
-            rows={4}
+            rows="3"
           />
 
-          {/* LOCATION */}
-
           <div className="location-confirm">
-
             <MapPin size={19} />
 
             <div>
-
               <strong>
                 Location attached
               </strong>
 
               <span>
                 {location
-                  ? formatCoordinates(
-                      location.lat,
-                      location.lng
-                    )
+                  ? `${location.lat.toFixed(
+                      5
+                    )}, ${location.lng.toFixed(5)}`
                   : "Enable GPS to attach location"}
               </span>
-
             </div>
 
             {location && (
               <CheckCircle2 size={19} />
             )}
-
           </div>
-
-          {/* MESSAGE */}
 
           {message && (
             <div
               className={
                 message
                   .toLowerCase()
-                  .includes("success")
+                  .includes("successfully")
                   ? "success-box"
                   : "error-box"
               }
             >
               <CircleAlert size={17} />
-
-              <span>
-                {message}
-              </span>
+              {message}
             </div>
           )}
-
-          {/* SUBMIT */}
 
           <button
             type="button"
@@ -993,102 +706,85 @@ function UserPage({ session, logout }) {
 
             <ChevronRight size={19} />
           </button>
-
         </section>
 
         {/* RECENT REPORTS */}
-
         <section className="recent-section">
 
           <div className="section-heading plain">
-
             <div>
               <span className="section-kicker">
                 MY ACTIVITY
               </span>
 
-              <h2>
-                Recent reports
-              </h2>
+              <h2>Recent reports</h2>
             </div>
 
             <ClipboardList size={22} />
-
           </div>
 
-          {reports.length === 0 ? (
-
+          {safeReports.length === 0 ? (
             <div className="empty-card">
-              Your submitted reports will
-              appear here.
+              Your submitted reports will appear here.
             </div>
-
           ) : (
-
-            reports
+            safeReports
               .slice(0, 5)
-              .map((report) => (
+              .map((report) => {
 
-                <div
-                  className="activity-card glass"
-                  key={report.id}
-                >
+                const status =
+                  String(
+                    report?.status || "OPEN"
+                  ).toLowerCase();
 
+                return (
                   <div
-                    className={`status-dot ${
-                      String(
+                    className="activity-card glass"
+                    key={report.id}
+                  >
+
+                    <div
+                      className={`status-dot ${status}`}
+                    />
+
+                    <div>
+                      <strong>
+                        {formatIssue(
+                          report.issueType
+                        )}
+                      </strong>
+
+                      <span>
+                        {report.reportedAt
+                          ? new Date(
+                              report.reportedAt
+                            ).toLocaleString()
+                          : "Recently submitted"}
+                      </span>
+                    </div>
+
+                    <b
+                      className={`status ${status}`}
+                    >
+                      {formatStatus(
                         report.status
-                      ).toLowerCase()
-                    }`}
-                  />
-
-                  <div>
-
-                    <strong>
-                      {formatIssue(
-                        report.issueType
                       )}
-                    </strong>
-
-                    <span>
-                      {new Date(
-                        report.reportedAt
-                      ).toLocaleString()}
-                    </span>
+                    </b>
 
                   </div>
-
-                  <b
-                    className={`status ${
-                      String(
-                        report.status
-                      ).toLowerCase()
-                    }`}
-                  >
-                    {formatStatus(
-                      report.status
-                    )}
-                  </b>
-
-                </div>
-
-              ))
-
+                );
+              })
           )}
-
         </section>
 
       </main>
-
     </div>
   );
 }
 
-/*
-|--------------------------------------------------------------------------
-| Admin Page
-|--------------------------------------------------------------------------
-*/
+/* ---------------------------------------------------------
+   Admin Page
+--------------------------------------------------------- */
 
 function AdminPage({ session, logout }) {
   const [reports, setReports] =
@@ -1114,45 +810,42 @@ function AdminPage({ session, logout }) {
   const [loading, setLoading] =
     useState(false);
 
-  /*
-  | Load dashboard
-  */
-
+  /* Load dashboard */
   const load = async () => {
     setLoading(true);
 
     try {
-      const [reportData, statsData] =
-        await Promise.all([
-          api.reports(session.token),
-          api.stats(session.token),
-        ]);
+      const [
+        reportData,
+        statsData,
+      ] = await Promise.all([
+        api.reports(session.token),
+        api.stats(session.token),
+      ]);
 
-      setReports(
-        Array.isArray(reportData)
-          ? reportData
-          : []
-      );
+      const reportList = normalizeReports(reportData);
+
+      console.log("ADMIN REPORTS:", reportList);
+      console.log("ADMIN STATS:", statsData);
+
+      setReports(reportList);
 
       setStats(
         statsData || {
-          total: 0,
-          open: 0,
-          inProgress: 0,
-          resolved: 0,
+          total: reportList.length,
+          open: reportList.filter((r) => r.status === "OPEN").length,
+          inProgress: reportList.filter((r) => r.status === "IN_PROGRESS").length,
+          resolved: reportList.filter((r) => r.status === "RESOLVED").length,
         }
       );
-
     } catch (error) {
       if (
-        String(
-          error?.message
-        ).toLowerCase()
-        .includes("session")
+        String(error?.message || "")
+          .toLowerCase()
+          .includes("session")
       ) {
         logout();
       }
-
     } finally {
       setLoading(false);
     }
@@ -1162,32 +855,34 @@ function AdminPage({ session, logout }) {
     load();
   }, [session.token]);
 
-  /*
-  | Filtering
-  */
+  const safeReports = Array.isArray(reports) ? reports : [];
 
   const filtered = useMemo(() => {
     if (filter === "ALL") {
-      return reports;
+      return safeReports;
     }
 
-    return reports.filter(
+    return safeReports.filter(
       (report) =>
         report.status === filter
     );
-  }, [reports, filter]);
+  }, [safeReports, filter]);
+
+  const latestMapReport = safeReports.find((r) => {
+    const lat = parseCoordinate(r.latitude);
+    const lng = parseCoordinate(r.longitude);
+    return lat !== null && lng !== null;
+  });
 
   return (
     <div className="admin-page">
 
       {/* TOP BAR */}
-
       <header className="admin-topbar clay">
 
         <Brand admin />
 
         <div className="admin-header-actions">
-
           <button
             type="button"
             className="icon-btn"
@@ -1198,12 +893,10 @@ function AdminPage({ session, logout }) {
           >
             <Menu size={20} />
           </button>
-
         </div>
 
         {menu && (
           <div className="admin-menu">
-
             <button
               type="button"
               onClick={logout}
@@ -1211,7 +904,6 @@ function AdminPage({ session, logout }) {
               <LogOut size={16} />
               Sign out
             </button>
-
           </div>
         )}
 
@@ -1220,7 +912,6 @@ function AdminPage({ session, logout }) {
       <main className="admin-main">
 
         {/* WELCOME */}
-
         <section className="admin-welcome">
 
           <p className="eyebrow">
@@ -1241,47 +932,40 @@ function AdminPage({ session, logout }) {
         </section>
 
         {/* STATS */}
-
         <section className="stats-grid">
 
           <Stat
             icon={<ClipboardList />}
             label="Total reports"
-            value={stats.total ?? 0}
+            value={stats?.total ?? 0}
           />
 
           <Stat
             icon={<CircleAlert />}
             label="Open"
-            value={stats.open ?? 0}
+            value={stats?.open ?? 0}
           />
 
           <Stat
             icon={<Clock3 />}
             label="In progress"
-            value={
-              stats.inProgress ?? 0
-            }
+            value={stats?.inProgress ?? 0}
           />
 
           <Stat
             icon={<CheckCircle2 />}
             label="Resolved"
-            value={
-              stats.resolved ?? 0
-            }
+            value={stats?.resolved ?? 0}
           />
 
         </section>
 
         {/* FIELD MAP */}
-
         <section className="clay admin-map-card">
 
           <div className="section-heading">
 
             <div>
-
               <span className="section-kicker">
                 FIELD MAP
               </span>
@@ -1289,24 +973,19 @@ function AdminPage({ session, logout }) {
               <h2>
                 Reported hazards
               </h2>
-
             </div>
 
-            <MapPinned size={22} />
+            <Navigation size={22} />
 
           </div>
 
-          {reports.length > 0 ? (
-
+          {latestMapReport ? (
             <MapView
-              lat={reports[0].latitude}
-              lng={reports[0].longitude}
+              lat={parseCoordinate(latestMapReport.latitude)}
+              lng={parseCoordinate(latestMapReport.longitude)}
               markerLabel="Latest report"
-              height={390}
             />
-
           ) : (
-
             <div className="map-placeholder clay-inset">
 
               <MapPin size={30} />
@@ -1316,24 +995,20 @@ function AdminPage({ session, logout }) {
               </strong>
 
               <span>
-                New user reports will
-                appear here.
+                New user reports will appear here.
               </span>
 
             </div>
-
           )}
 
         </section>
 
         {/* REPORT QUEUE */}
-
         <section className="reports-panel clay">
 
           <div className="section-heading">
 
             <div>
-
               <span className="section-kicker">
                 CASE QUEUE
               </span>
@@ -1341,7 +1016,6 @@ function AdminPage({ session, logout }) {
               <h2>
                 Incoming reports
               </h2>
-
             </div>
 
             <button
@@ -1350,23 +1024,12 @@ function AdminPage({ session, logout }) {
               onClick={load}
               disabled={loading}
             >
-              <RefreshCw
-                size={15}
-                className={
-                  loading
-                    ? "spin"
-                    : ""
-                }
-              />
-
               {loading
                 ? "Loading..."
                 : "Refresh"}
             </button>
 
           </div>
-
-          {/* FILTERS */}
 
           <div className="filter-row">
 
@@ -1376,100 +1039,115 @@ function AdminPage({ session, logout }) {
               "IN_PROGRESS",
               "RESOLVED",
               "REJECTED",
-            ].map((status) => (
-
+            ].map((x) => (
               <button
                 type="button"
-                key={status}
+                key={x}
                 className={
-                  filter === status
+                  filter === x
                     ? "filter active"
                     : "filter"
                 }
                 onClick={() =>
-                  setFilter(status)
+                  setFilter(x)
                 }
               >
-                {formatStatus(
-                  status
-                )}
+                {x.replaceAll("_", " ")}
               </button>
-
             ))}
 
           </div>
 
-          {/* REPORTS */}
-
           <div className="report-list">
 
-            {filtered.map((report) => (
+            {filtered.map((report) => {
 
-              <button
-                type="button"
-                className="report-row"
-                key={report.id}
-                onClick={() =>
-                  setSelected(report)
-                }
-              >
+              const status =
+                String(
+                  report?.status || "OPEN"
+                ).toLowerCase();
 
-                <div className="report-thumb">
+              const photoSrc = resolvePhotoUrl(report.photoUrl);
 
-                  {report.photoUrl ? (
+              const lat = parseCoordinate(report.latitude);
+              const lng = parseCoordinate(report.longitude);
+              const hasCoords = lat !== null && lng !== null;
 
-                    <img
-                      src={`${api.base}${report.photoUrl}`}
-                      alt="Reported hazard"
-                    />
-
-                  ) : (
-
-                    <CircleAlert />
-
-                  )}
-
-                </div>
-
-                <div className="report-row-content">
-
-                  <strong>
-                    {formatIssue(
-                      report.issueType
-                    )}
-                  </strong>
-
-                  <span>
-                    {report.address ||
-                      formatCoordinates(
-                        report.latitude,
-                        report.longitude
-                      )}
-                  </span>
-
-                  <small>
-                    {new Date(
-                      report.reportedAt
-                    ).toLocaleString()}
-                  </small>
-
-                </div>
-
-                <b
-                  className={`status ${
-                    String(
-                      report.status
-                    ).toLowerCase()
-                  }`}
+              return (
+                <button
+                  type="button"
+                  className="report-row"
+                  key={report.id}
+                  onClick={() =>
+                    setSelected(report)
+                  }
                 >
-                  {formatStatus(
-                    report.status
-                  )}
-                </b>
 
-              </button>
+                  <div className="report-thumb">
 
-            ))}
+                    {photoSrc ? (
+                      <img
+                        src={photoSrc}
+                        alt="Report"
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                          if (e.target.nextSibling) {
+                            e.target.nextSibling.style.display = "flex";
+                          }
+                        }}
+                      />
+                    ) : null}
+                    <div
+                      className="thumb-fallback"
+                      style={{
+                        display: photoSrc ? "none" : "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: "100%",
+                        height: "100%",
+                      }}
+                    >
+                      <CircleAlert />
+                    </div>
+
+                  </div>
+
+                  <div className="report-row-content">
+
+                    <strong>
+                      {formatIssue(
+                        report.issueType
+                      )}
+                    </strong>
+
+                    <span>
+                      {report.address ||
+                        (hasCoords
+                          ? `${lat.toFixed(5)}, ${lng.toFixed(5)}`
+                          : "No location attached")}
+                    </span>
+
+                    <small>
+                      {report.reportedAt
+                        ? new Date(
+                            report.reportedAt
+                          ).toLocaleString()
+                        : "Recently submitted"}
+                    </small>
+
+                  </div>
+
+                  <b
+                    className={`status ${status}`}
+                  >
+                    {formatStatus(
+                      report.status
+                    )}
+                  </b>
+
+                </button>
+              );
+            })}
 
             {filtered.length === 0 && (
               <div className="empty-card">
@@ -1483,8 +1161,6 @@ function AdminPage({ session, logout }) {
 
       </main>
 
-      {/* REPORT DRAWER */}
-
       {selected && (
         <ReportDrawer
           report={selected}
@@ -1495,16 +1171,20 @@ function AdminPage({ session, logout }) {
           onChanged={async () => {
             await load();
 
-            const latest =
+            const latestData =
               await api.reports(
                 session.token
+              );
+
+            const latest =
+              normalizeReports(
+                latestData
               );
 
             const updated =
               latest.find(
                 (item) =>
-                  item.id ===
-                  selected.id
+                  item.id === selected.id
               );
 
             setSelected(
@@ -1518,11 +1198,9 @@ function AdminPage({ session, logout }) {
   );
 }
 
-/*
-|--------------------------------------------------------------------------
-| Stat card
-|--------------------------------------------------------------------------
-*/
+/* ---------------------------------------------------------
+   Stat Card
+--------------------------------------------------------- */
 
 function Stat({
   icon,
@@ -1548,21 +1226,35 @@ function Stat({
   );
 }
 
-/*
-|--------------------------------------------------------------------------
-| Report Details Drawer
-|--------------------------------------------------------------------------
-*/
+/* ---------------------------------------------------------
+   Report Details Drawer
+--------------------------------------------------------- */
 
-function ReportDrawer({ report, token, close, onChanged }) {
-  const [busy, setBusy] = useState(false);
-  const [currentStatus, setCurrentStatus] = useState(report.status);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+function ReportDrawer({
+  report,
+  token,
+  close,
+  onChanged,
+}) {
+  const [busy, setBusy] =
+    useState(false);
+
+  const [currentStatus, setCurrentStatus] =
+    useState(
+      report?.status || "OPEN"
+    );
+
+  const [message, setMessage] =
+    useState("");
+
+  const [error, setError] =
+    useState("");
 
   useEffect(() => {
-    setCurrentStatus(report.status);
-  }, [report.id, report.status]);
+    setCurrentStatus(
+      report?.status || "OPEN"
+    );
+  }, [report?.id, report?.status]);
 
   const statusOptions = [
     {
@@ -1587,8 +1279,13 @@ function ReportDrawer({ report, token, close, onChanged }) {
     },
   ];
 
-  const changeStatus = async (newStatus) => {
-    if (busy || newStatus === currentStatus) {
+  const changeStatus = async (
+    newStatus
+  ) => {
+    if (
+      busy ||
+      newStatus === currentStatus
+    ) {
       return;
     }
 
@@ -1596,39 +1293,37 @@ function ReportDrawer({ report, token, close, onChanged }) {
     setError("");
     setMessage("");
 
-    // Optimistic UI update
+    const oldStatus = currentStatus;
+
     setCurrentStatus(newStatus);
 
     try {
-      console.log(
-        "Updating report:",
-        report.id,
-        "from:",
-        currentStatus,
-        "to:",
-        newStatus
+      const updatedReport =
+        await api.updateStatus(
+          token,
+          report.id,
+          newStatus
+        );
+
+      const actualStatus =
+        updatedReport?.status ||
+        newStatus;
+
+      setCurrentStatus(
+        actualStatus
       );
 
-      const updatedReport = await api.updateStatus(
-        token,
-        report.id,
-        newStatus
+      setMessage(
+        `Status changed to ${formatStatus(
+          actualStatus
+        )}.`
       );
 
-      console.log("Status update response:", updatedReport);
-
-      setCurrentStatus(updatedReport.status || newStatus);
-      setMessage(`Status changed to ${newStatus.replace("_", " ")}.`);
-
-      // Refresh admin dashboard
       if (onChanged) {
         await onChanged();
       }
     } catch (err) {
-      console.error("Status update failed:", err);
-
-      // Restore old status if API failed
-      setCurrentStatus(report.status);
+      setCurrentStatus(oldStatus);
 
       setError(
         err?.message ||
@@ -1639,21 +1334,35 @@ function ReportDrawer({ report, token, close, onChanged }) {
     }
   };
 
+  const photoSrc = resolvePhotoUrl(report.photoUrl);
+  const lat = parseCoordinate(report.latitude);
+  const lng = parseCoordinate(report.longitude);
+  const hasCoords = lat !== null && lng !== null;
+
   return (
-    <div className="drawer-backdrop" onClick={close}>
+    <div
+      className="drawer-backdrop"
+      onClick={close}
+    >
+
       <aside
         className="report-drawer clay"
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) =>
+          e.stopPropagation()
+        }
       >
 
         {/* HEADER */}
         <div className="drawer-header">
+
           <div>
             <span className="section-kicker">
               CASE #{report.id}
             </span>
 
-            <h2>Report details</h2>
+            <h2>
+              Report details
+            </h2>
           </div>
 
           <button
@@ -1664,122 +1373,126 @@ function ReportDrawer({ report, token, close, onChanged }) {
           >
             <X size={22} />
           </button>
+
         </div>
 
         {/* PHOTO */}
-        {report.photoUrl && (
+        {photoSrc ? (
           <img
             className="drawer-photo"
-            src={`${api.base}${report.photoUrl}`}
+            src={photoSrc}
             alt="Reported hazard"
           />
+        ) : (
+          <div className="empty-photo-placeholder">
+            <CircleAlert size={32} />
+            <span>No photo uploaded</span>
+          </div>
         )}
 
-        {/* ISSUE DETAILS */}
+        {/* ISSUE */}
         <div className="detail-card">
+
           <strong>
-            {issueTypes.find(
-              (item) => item[0] === report.issueType
-            )?.[1] || report.issueType}
+            {formatIssue(
+              report.issueType
+            )}
           </strong>
 
           <p>
-            {report.description || "No description provided."}
+            {report.description ||
+              "No description provided."}
           </p>
+
         </div>
 
         {/* MAP */}
-        <MapView
-          lat={report.latitude}
-          lng={report.longitude}
-          markerLabel="Hazard report"
-        />
+        {hasCoords ? (
+          <MapView
+            lat={lat}
+            lng={lng}
+            markerLabel="Hazard report"
+          />
+        ) : (
+          <div className="map-placeholder clay-inset">
+            <MapPin size={24} />
+            <span>No valid map coordinates available</span>
+          </div>
+        )}
 
-        {/* GPS */}
-        <div className="coordinates">
-          <MapPin size={17} />
+        {/* ADDRESS AND COORDINATES */}
+        <div className="location-details-card">
+          {report.address && (
+            <div className="address-line">
+              <strong>Address: </strong>
+              <span>{report.address}</span>
+            </div>
+          )}
 
-          <span>
-            {Number(report.latitude).toFixed(6)},{" "}
-            {Number(report.longitude).toFixed(6)}
-          </span>
+          <div className="coordinates">
+            <MapPin size={17} />
+            <span>
+              {hasCoords
+                ? `${lat.toFixed(6)}, ${lng.toFixed(6)}`
+                : "Coordinates unavailable"}
+            </span>
+          </div>
         </div>
 
-        {/* CURRENT STATUS */}
-        <div className="current-status-box">
-          <span className="section-kicker">
-            CURRENT STATUS
-          </span>
-
-          <strong>
-            {currentStatus.replace("_", " ")}
-          </strong>
-        </div>
-
-        {/* STATUS BUTTONS */}
+        {/* STATUS */}
         <div className="status-actions">
 
-          {statusOptions.map((item) => {
-            const selected = currentStatus === item.value;
-
-            return (
+          {statusOptions.map(
+            (option) => (
               <button
                 type="button"
-                key={item.value}
                 disabled={busy}
-                className={`status-action ${
-                  selected ? "selected" : ""
-                }`}
-                onClick={() => changeStatus(item.value)}
+                key={option.value}
+                className={
+                  `status-action ${
+                    currentStatus ===
+                    option.value
+                      ? "selected"
+                      : ""
+                  }`
+                }
+                onClick={() =>
+                  changeStatus(
+                    option.value
+                  )
+                }
               >
-                {item.icon}
-
-                <span>{item.label}</span>
-
-                {selected && (
-                  <span className="status-check">
-                    ✓
-                  </span>
-                )}
+                {option.icon}
+                {option.label}
               </button>
-            );
-          })}
+            )
+          )}
 
         </div>
 
-        {/* LOADING */}
-        {busy && (
-          <div className="status-info">
-            Updating report status...
-          </div>
-        )}
-
-        {/* SUCCESS */}
-        {message && !busy && (
-          <div className="status-success">
+        {message && (
+          <div className="success-box">
             <CheckCircle2 size={17} />
-            <span>{message}</span>
+            {message}
           </div>
         )}
 
-        {/* ERROR */}
         {error && (
-          <div className="status-error">
+          <div className="error-box">
             <CircleAlert size={17} />
-            <span>{error}</span>
+            {error}
           </div>
         )}
 
       </aside>
+
     </div>
   );
 }
 
-/*
-|--------------------------------------------------------------------------
-| Main App
-|--------------------------------------------------------------------------
-*/
+/* ---------------------------------------------------------
+   Main App
+--------------------------------------------------------- */
 
 export default function App() {
   const [session, setSession] =
@@ -1795,25 +1508,6 @@ export default function App() {
       }
     });
 
-  /*
-  | Save session
-  */
-
-  const saveSession = (sessionData) => {
-    localStorage.setItem(
-      "safewalk_session",
-      JSON.stringify(
-        sessionData
-      )
-    );
-
-    setSession(sessionData);
-  };
-
-  /*
-  | Logout
-  */
-
   const logout = () => {
     localStorage.removeItem(
       "safewalk_session"
@@ -1822,35 +1516,30 @@ export default function App() {
     setSession(null);
   };
 
-  /*
-  | Login screen
-  */
+  const save = (s) => {
+    localStorage.setItem(
+      "safewalk_session",
+      JSON.stringify(s)
+    );
+
+    setSession(s);
+  };
 
   if (!session) {
     return (
       <PinLogin
-        onUser={saveSession}
-        onAdmin={saveSession}
+        onUser={save}
+        onAdmin={save}
       />
     );
   }
 
-  /*
-  | Dashboard
-  */
-
-  if (
-    session.role === "ADMIN"
-  ) {
-    return (
-      <AdminPage
-        session={session}
-        logout={logout}
-      />
-    );
-  }
-
-  return (
+  return session.role === "ADMIN" ? (
+    <AdminPage
+      session={session}
+      logout={logout}
+    />
+  ) : (
     <UserPage
       session={session}
       logout={logout}

@@ -1,343 +1,251 @@
 package com.safewalk.service;
 
-import java.security.SecureRandom;
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.safewalk.model.SessionToken;
 import com.safewalk.model.UserAccount;
-import com.safewalk.repository.SessionTokenRepository;
 import com.safewalk.repository.UserAccountRepository;
 
 @Service
 public class AuthService {
 
     private final UserAccountRepository users;
-    private final SessionTokenRepository sessions;
     private final PasswordEncoder encoder;
 
-    private final String adminPassword;
+    private final Map<String, Long> sessions = new ConcurrentHashMap<>();
 
-    private final SecureRandom random =
-            new SecureRandom();
+    @Value("${safewalk.admin.password:1234567890}")
+    private String adminPassword;
+
+    private static final String RECOVERY_CODE = "123456";
 
     public AuthService(
             UserAccountRepository users,
-            SessionTokenRepository sessions,
-            PasswordEncoder encoder,
-            @Value("${safewalk.admin.password:1234567890}")
-            String adminPassword
-    ) {
+            PasswordEncoder encoder) {
+
         this.users = users;
-        this.sessions = sessions;
         this.encoder = encoder;
-        this.adminPassword = adminPassword;
     }
 
     public boolean userPinExists(String pin) {
 
-        List<UserAccount> allUsers =
-                users.findAll();
-
-        for (UserAccount user : allUsers) {
-
-            if (encoder.matches(
-                    pin,
-                    user.getPinHash()
-            )) {
-                return true;
-            }
+        if (pin == null || !pin.matches("\\d{4}")) {
+            return false;
         }
 
-        return false;
+        return users.findAll()
+                .stream()
+                .anyMatch(user ->
+                        user.getPinHash() != null
+                        && encoder.matches(pin, user.getPinHash()));
     }
 
-    public Map<String, Object> registerUser(
-            String pin
-    ) {
+    public Map<String, Object> registerUser(String pin) {
 
-        if (!pin.matches("\\d{4}")) {
+        if (pin == null || !pin.matches("\\d{4}")) {
             throw new IllegalArgumentException(
-                    "PIN must contain exactly 4 digits"
-            );
+                    "PIN must contain exactly 4 digits");
         }
 
         if (userPinExists(pin)) {
             throw new IllegalArgumentException(
-                    "This PIN is already registered"
-            );
+                    "This PIN is already registered");
         }
 
-        String recoveryCode =
-                generateRecoveryCode();
+        UserAccount user = new UserAccount(
+                encoder.encode(pin),
+                encoder.encode(RECOVERY_CODE));
 
-        UserAccount user =
-                new UserAccount();
+        users.save(user);
 
-        user.setPinHash(
-                encoder.encode(pin)
+        return Map.of(
+                "success", true,
+                "message", "User registered successfully",
+                "recoveryCode", RECOVERY_CODE
         );
-
-        user.setRecoveryCodeHash(
-                encoder.encode(recoveryCode)
-        );
-
-        UserAccount saved =
-                users.save(user);
-
-        SessionToken session =
-                createSession(
-                        "USER",
-                        saved.getId()
-                );
-
-        Map<String, Object> response =
-                new HashMap<>();
-
-        response.put(
-                "token",
-                session.getToken()
-        );
-
-        response.put(
-                "role",
-                "USER"
-        );
-
-        response.put(
-                "userId",
-                saved.getId()
-        );
-
-        response.put(
-                "recoveryCode",
-                recoveryCode
-        );
-
-        return response;
     }
 
-    public Map<String, Object> loginUser(
-            String pin
-    ) {
+    public Map<String, Object> loginUser(String pin) {
 
-        UserAccount matched = null;
-
-        for (UserAccount user :
-                users.findAll()) {
-
-            if (encoder.matches(
-                    pin,
-                    user.getPinHash()
-            )) {
-                matched = user;
-                break;
-            }
-        }
-
-        if (matched == null) {
+        if (pin == null || !pin.matches("\\d{4}")) {
             throw new IllegalArgumentException(
-                    "Invalid PIN"
-            );
+                    "PIN must contain exactly 4 digits");
         }
 
-        SessionToken session =
-                createSession(
-                        "USER",
-                        matched.getId()
-                );
+        UserAccount user = findByPin(pin);
 
-        return sessionResponse(session);
+        if (user == null) {
+            throw new IllegalArgumentException("Invalid PIN");
+        }
+
+        String token = UUID.randomUUID().toString();
+
+        sessions.put(token, user.getId());
+
+        return Map.of(
+                "success", true,
+                "message", "Login successful",
+                "token", token,
+                "userId", user.getId(),
+                "role", "USER"
+        );
+    }
+
+    public Map<String, Object> loginAdmin(String password) {
+
+        if (password == null || !password.matches("\\d{10}")) {
+            throw new IllegalArgumentException(
+                    "Admin password must contain exactly 10 digits");
+        }
+
+        if (!password.equals(adminPassword)) {
+            throw new IllegalArgumentException(
+                    "Invalid admin password");
+        }
+
+        String token = UUID.randomUUID().toString();
+
+        sessions.put(token, -1L);
+
+        return Map.of(
+                "success", true,
+                "message", "Admin login successful",
+                "token", token,
+                "role", "ADMIN"
+        );
     }
 
     public Map<String, Object> resetUserPin(
             String recoveryCode,
-            String newPin
-    ) {
+            String newPin) {
 
-        if (!recoveryCode.matches("\\d{6}")) {
+        if (recoveryCode == null
+                || !recoveryCode.matches("\\d{6}")) {
+
             throw new IllegalArgumentException(
-                    "Recovery code must contain exactly 6 digits"
-            );
+                    "Recovery code must contain exactly 6 digits");
         }
 
-        if (!newPin.matches("\\d{4}")) {
+        if (newPin == null
+                || !newPin.matches("\\d{4}")) {
+
             throw new IllegalArgumentException(
-                    "New PIN must contain exactly 4 digits"
-            );
+                    "New PIN must contain exactly 4 digits");
         }
 
-        UserAccount matched = null;
+        UserAccount user = users.findAll()
+                .stream()
+                .filter(u ->
+                        u.getRecoveryCodeHash() != null
+                        && encoder.matches(
+                                recoveryCode,
+                                u.getRecoveryCodeHash()))
+                .findFirst()
+                .orElse(null);
 
-        for (UserAccount user :
-                users.findAll()) {
-
-            if (encoder.matches(
-                    recoveryCode,
-                    user.getRecoveryCodeHash()
-            )) {
-                matched = user;
-                break;
-            }
-        }
-
-        if (matched == null) {
+        if (user == null) {
             throw new IllegalArgumentException(
-                    "Invalid recovery code"
-            );
+                    "Invalid recovery code");
         }
 
         if (userPinExists(newPin)) {
             throw new IllegalArgumentException(
-                    "This PIN is already registered"
-            );
+                    "This PIN is already registered");
         }
 
-        matched.setPinHash(
-                encoder.encode(newPin)
+        user.setPinHash(encoder.encode(newPin));
+
+        users.save(user);
+
+        return Map.of(
+                "success", true,
+                "message", "PIN reset successfully"
         );
-
-        users.save(matched);
-
-        SessionToken session =
-                createSession(
-                        "USER",
-                        matched.getId()
-                );
-
-        return sessionResponse(session);
     }
 
-    public Map<String, Object> loginAdmin(
-            String password
-    ) {
+    /*
+     * Existing controllers use this method to validate
+     * the session and authorization role.
+     */
+    public void require(String token, String role) {
 
-        if (!password.equals(adminPassword)) {
+        if (!isValidToken(token)) {
             throw new IllegalArgumentException(
-                    "Invalid administrator password"
-            );
+                    "Invalid or expired session token");
         }
 
-        SessionToken session =
-                createSession(
-                        "ADMIN",
-                        null
-                );
+        Long userId = sessions.get(token);
 
-        return sessionResponse(session);
-    }
+        boolean isAdmin = Long.valueOf(-1L).equals(userId);
 
-    public SessionToken require(
-            String token,
-            String expectedRole
-    ) {
+        if ("ADMIN".equalsIgnoreCase(role) && !isAdmin) {
+            throw new IllegalArgumentException(
+                    "Admin authorization required");
+        }
 
-        if (token == null ||
-                token.isBlank()) {
+        if ("USER".equalsIgnoreCase(role) && isAdmin) {
+            throw new IllegalArgumentException(
+                    "User authorization required");
+        }
+
+        if (!"ADMIN".equalsIgnoreCase(role)
+                && !"USER".equalsIgnoreCase(role)) {
 
             throw new IllegalArgumentException(
-                    "Missing session token"
-            );
+                    "Unknown authorization role: " + role);
         }
-
-        SessionToken session =
-                sessions.findByToken(token)
-                        .orElseThrow(
-                                () -> new IllegalArgumentException(
-                                        "Invalid session token"
-                                )
-                        );
-
-        if (session.getExpiresAt()
-                .isBefore(LocalDateTime.now())) {
-
-            sessions.delete(session);
-
-            throw new IllegalArgumentException(
-                    "Session expired"
-            );
-        }
-
-        if (!expectedRole.equals(
-                session.getRole()
-        )) {
-
-            throw new IllegalArgumentException(
-                    "Access denied"
-            );
-        }
-
-        return session;
     }
 
-    private SessionToken createSession(
-            String role,
-            Long userId
-    ) {
+    public boolean isValidToken(String token) {
 
-        SessionToken session =
-                new SessionToken();
-
-        session.setToken(
-                UUID.randomUUID()
-                        .toString()
-                        .replace("-", "")
-        );
-
-        session.setRole(role);
-        session.setUserId(userId);
-
-        session.setExpiresAt(
-                LocalDateTime.now()
-                        .plusHours(12)
-        );
-
-        return sessions.save(session);
+        return token != null
+                && !token.isBlank()
+                && sessions.containsKey(token);
     }
 
-    private Map<String, Object> sessionResponse(
-            SessionToken session
-    ) {
+    public boolean isAdminToken(String token) {
 
-        Map<String, Object> response =
-                new HashMap<>();
-
-        response.put(
-                "token",
-                session.getToken()
-        );
-
-        response.put(
-                "role",
-                session.getRole()
-        );
-
-        response.put(
-                "userId",
-                session.getUserId()
-        );
-
-        response.put(
-                "expiresAt",
-                session.getExpiresAt()
-        );
-
-        return response;
+        return isValidToken(token)
+                && Long.valueOf(-1L).equals(sessions.get(token));
     }
 
-    private String generateRecoveryCode() {
+    public Long getUserIdFromToken(String token) {
 
-        int value =
-                100000 +
-                random.nextInt(900000);
+        if (!isValidToken(token)) {
+            return null;
+        }
 
-        return String.valueOf(value);
+        Long userId = sessions.get(token);
+
+        if (userId == null || userId == -1L) {
+            return null;
+        }
+
+        return userId;
+    }
+
+    public void logout(String token) {
+
+        if (token != null) {
+            sessions.remove(token);
+        }
+    }
+
+    private UserAccount findByPin(String pin) {
+
+        return users.findAll()
+                .stream()
+                .filter(user ->
+                        user.getPinHash() != null
+                        && encoder.matches(
+                                pin,
+                                user.getPinHash()))
+                .findFirst()
+                .orElse(null);
     }
 }
